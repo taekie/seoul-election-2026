@@ -463,7 +463,29 @@
       <div class="body">
         <p>
           동네의 정치 성향은 거의 움직이지 않는다. 늘상 보던대로 강남 3구와 한강
-          벨트쪽은 보수 우세이다. 무엇이 달라졌을까.
+          벨트쪽은 보수 우세이다. 이 성향의 지도는 부동산 가격의 지도이기도
+          하다.
+        </p>
+      </div>
+
+      <figure class="wide">
+        <div class="fig-title">아파트 평단가 vs 오세훈−정원오 득표율차</div>
+        <div class="fig-sub">비쌀수록 오세훈 우세. 우상향(r = 0.83).</div>
+        <div class="chart" id="sc-price"></div>
+        <figcaption>
+          자료: 국토부 실거래가(2025 아파트)·중앙선거관리위원회. x = 동별
+          평단가(만원/㎡, 거래금액÷전용면적), y = 오세훈−정원오 득표율차, 원
+          크기 = 아파트 비율. 실거래가 있는 244개 동 전체. r = 0.83.
+        </figcaption>
+      </figure>
+
+      <div class="body">
+        <p>
+          동네별 아파트값과 오세훈 득표율차를 그리면 예쁘게 일직선으로
+          줄세워진다(r=0.83). 비싼 아파트가 많은 동일수록 누가 나오든 보수
+          후보에 표를 많이 준다. 다만 이건 '어느 동네가 보수인가'라는 성향
+          이야기이지, 대선과 시장 사이에 '무엇이 변했나'는 아니다. 변화는 따로
+          봐야 한다. 무엇이 달라졌을까.
         </p>
       </div>
 
@@ -872,25 +894,6 @@
       </figure>
 
       <figure class="wide">
-        <div class="fig-title">아파트 평단가 vs 오세훈−정원오 득표율차</div>
-        <div class="fig-sub">비쌀수록 오세훈 우세. 우상향(r = 0.83).</div>
-        <div class="chart" id="sc-price"></div>
-        <figcaption>
-          자료: 국토부 실거래가(2025 아파트)·중앙선거관리위원회. x = 동별
-          평단가(만원/㎡, 거래금액÷전용면적), y = 오세훈−정원오 득표율차, 원
-          크기 = 아파트 비율. 실거래가 있는 244개 동 전체. r = 0.83.
-        </figcaption>
-      </figure>
-
-      <div class="body">
-        <p>
-          오세훈 표는 원래부터 부동산과 떼어놓기 어렵다. 동네별 아파트값과
-          오세훈 득표율차를 그리면 예쁘게 일직선으로 줄세워진다(r=0.83). 비싼
-          아파트가 많은 동일수록 누가 나오든 보수 후보에 표를 많이 준다.
-        </p>
-      </div>
-
-      <figure class="wide">
         <div class="fig-title">노후 분양 비중 vs 오세훈 추가 득표</div>
         <div class="fig-sub">
           대선부터 강한 보수인 동(회색)을 빼도, 노후 분양이 많을수록 오세훈이 더
@@ -909,22 +912,30 @@
 
       <div class="body">
         <p>
-          여기에 오차를 설명하는 건 재건축,재개발 심리로 볼 수 있다. 재건축
-          기대가 큰 노후 단지일수록, 오세훈은 성향이 예측하는 것보다 더 많은
-          표를 얻었다( r=0.48, 대선부터 강보수인 동은 제외).
+          크기부터 정직하게 말하면, 남은 오차에서 가장 큰 덩어리는 재개발이
+          아니라 성동구다. 정원오 전 구청장의 개인 지지가 잔차 분산의 27%를
+          차지한다. 그 다음이 재개발이다. 성동을 빼면 재개발 관련 변수(노후
+          분양 비중·정비 유형)가 남은 오차의 약 5분의 1을 설명하고, 절반 이상은
+          어느 변수로도 설명되지 않는 동네별 잡음이다.
+        </p>
+        <p>
+          그 5분의 1은 패턴이 뚜렷하다. 재건축 기대가 큰 노후 단지일수록
+          오세훈은 성향이 예측하는 것보다 더 많은 표를 얻었고(강보수 동 제외 r
+          = 0.48), 이 경향은 같은 구 안에서 이웃 동과 비교해도 그대로
+          유지된다.
           압구정·잠원(신반포)·올림픽선수촌·상계주공·목동·여의도·잠실주공5처럼
           재건축 추진 단지가 몰린 동네들이 여기에 해당한다. 같은 아파트라도
           자가인 분양아파트가 아닌 임대아파트가 많은 동네는 영향이
           없다(r=−0.01).
         </p>
-        <p>
-          재건축·재개발은 규제를 풀어 줄 시장이 누구냐에 따라 사업 속도와 자산
-          가치가 갈린다. 주민 입장에서는 '재개발 기대'를 실현해 줄 후보로
-          오세훈이 더 유리하다고 판단했을 가능성이 크다.
-        </p>
       </div>
 
       <figure class="wide">
+        <div class="fig-title">재개발 벨트 vs 오세훈 추가 득표</div>
+        <div class="fig-sub">
+          노후 분양이 많은 동(왼쪽)과, 성향·이준석 전이를 걷어내고도 오세훈이
+          더 받은 동(오른쪽)이 거의 같은 자리에서 겹친다.
+        </div>
         <div
           style="
             display: flex;
@@ -936,9 +947,9 @@
         >
           <div style="flex: 1 1 320px; max-width: 470px">
             <div class="fig-sub" style="margin-bottom: 2px; font-weight: 700">
-              정비 유형 (재개발·재건축)
+              노후 분양 아파트 분포
             </div>
-            <div class="chart" id="redev-map"></div>
+            <div class="chart" id="oldbunr-map"></div>
           </div>
           <div style="flex: 1 1 320px; max-width: 470px">
             <div class="fig-sub" style="margin-bottom: 2px; font-weight: 700">
@@ -948,22 +959,49 @@
           </div>
         </div>
         <figcaption>
-          자료: 서울시 정비사업 현황·열린데이터광장 공동주택·중앙선거관리위원회.
-          왼쪽 색 = 정비 유형(파랑 재개발 입주(선거인 +13%↑ 신축 입주)·주황
-          재개발 추진지·보라 재개발 이주·초록 재건축 예상). 검은 선 = 자치구
-          경계. 오른쪽 색 = 시장 득표율차를 대선 성향과 이준석 득표율로 회귀한
-          잔차(양수 = 오세훈 추가, %p, 60% 가정 없이 이준석을 통제). 정비 68개
-          동의 71%가 오세훈 추가(+), 나머지(357개)는 45%. 마우스를 올리면 동별
-          수치 표시.
+          자료: 서울 열린데이터광장 공동주택·중앙선거관리위원회. 왼쪽 색 =
+          노후(준공 35년+) 분양세대 ÷ 유권자. 오른쪽 색 = 시장 득표율차를 대선
+          성향과 이준석 득표율로 회귀한 잔차(양수 = 오세훈 추가, %p, 60% 가정
+          없이 이준석을 통제). 검은 선 = 자치구 경계. 마우스를 올리면 동별 수치
+          표시.
         </figcaption>
       </figure>
 
       <div class="body">
         <p>
-          정비 관련 동들을 지도에 올리고, 오세훈 추가 득표와 나란히 놓고 보면
-          겹치는 곳이 보인다. 왼쪽은 재개발 추진지·재개발 이주·재건축 예상을
-          색으로 나눈 것이고, 오른쪽은 성향·이준석을 걷어낸 오세훈 추가 득표다.
-          정비 유형으로 묶인 68개 동의 71%가 오세훈 쪽으로 더 기울었다.
+          지도로 나란히 놓고 보면 겹치는 자리가 보인다. 상계·중계와 창동,
+          목동, 여의도, 압구정·잠실 — 노후 분양 단지가 몰린 벨트가 오른쪽
+          지도에서도 붉다. 정비사업 관련 68개 동의 71%가 오세훈 쪽으로 더
+          기울었다(나머지 동은 45%).
+        </p>
+      </div>
+
+      <figure class="wide">
+        <div class="fig-title">재건축 동네는 구청장 표도 같이 움직였다</div>
+        <div class="fig-sub">
+          노후 분양이 많을수록 시장(오세훈)도, 같은 날 국힘 구청장 후보도
+          대선보다 표를 더 받았다 — 두 기울기가 나란하다.
+        </div>
+        <div class="chart" id="dual-shift"></div>
+        <figcaption>
+          자료: 중앙선거관리위원회. x = 노후(준공 35년+) 분양세대 ÷ 유권자, y =
+          대선 대비 보수화(국힘 후보 양자 득표율 − 2025 김문수 양자 득표율,
+          %p). 풀 안정·분양 25%+ 동 중 강보수·성동 제외 33개 동, 원 크기 =
+          투표자 수. 구청장은 구마다 후보가 달라 구 평균 편차를 제거한
+          값(인물·공천 효과 보정). 기울기: 노후 분양 10%p당 시장 +0.4%p,
+          구청장 +0.3%p — 차이는 0과 구분되지 않는다(±0.1%p).
+        </figcaption>
+      </figure>
+
+      <div class="body">
+        <p>
+          이 추가 표가 '오세훈 개인의 인기'였다면 시장 투표에서만 나타나고,
+          같은 날 구청장 투표에는 없어야 한다. 실제로는 재건축 동네일수록 국힘
+          구청장 후보도 거의 같은 폭으로 표를 더 받았다. 동네가 오세훈이라는
+          개인이 아니라, 재건축·재개발의 인허가를 쥔 시장과 구청장 —
+          지방권력을 세트로 골랐다는 뜻이다. 규제를 풀어 줄 권력이 누구냐에
+          따라 사업 속도와 자산 가치가 갈리니, '재개발 기대'를 실현해 줄 쪽에
+          표를 모았다는 해석과 부합한다.
         </p>
       </div>
 
@@ -978,8 +1016,9 @@
           오세훈으로 이동한 것으로 설명할 수 있다.
         </p>
         <p>
-          3. 이준석 표를 보정하고 남는 오차는 많은 부분 재개발에 대한 욕망이
-          설명한다.
+          3. 이준석 표를 보정하고 남는 오차의 가장 큰 덩어리는 성동(정원오 개인
+          지지)이고, 그 다음이 재개발 기대다. 재건축 동네는 시장만이 아니라
+          구청장 표도 같이 움직였다 — 개인이 아니라 지방권력을 골랐다.
         </p>
       </div>
 
@@ -1041,7 +1080,13 @@
           회귀(이준석층 참여율 약 56%), ③ 동별 기울기 매칭(48%, 95% 신뢰구간
           35~61%, 부트스트랩 2,000회)의 세 경로로 교차 확인했다. 김정철
           잔류율(6.6%)과 이준석→정원오(≈0)는 동별 회귀에서 직접 추정. 구청장
-          득표는 25개 구 정당별 합산(관외·거소 포함).
+          득표는 25개 구 정당별 합산(관외·거소 포함). '오세훈 추가
+          득표(잔차)'는 시장 득표율차를 대선 성향·이준석 득표율로 회귀한 잔차로,
+          잔차 분산의 27%는 성동구, 성동 제외 시 약 5분의 1은 재개발
+          변수(노후 분양 비중·정비 유형)가 설명한다. 시장·구청장 보수화 비교는
+          국힘 후보 양자 득표율 − 2025 김문수 양자 득표율(%p)이며 구청장은 구
+          평균 편차를 제거해 인물·공천 효과를 보정했다(반포본동은 유권자 급감
+          허수로 제외).
         </p>
         <p>
           자료 · 중앙선거관리위원회 선거통계시스템(대선·시장·구청장) · 서울
@@ -1163,8 +1208,9 @@
         drawScatterJun(rows);
         drawSDResid();
         drawScatterRedev(rows);
-        drawRedevMap(rows, geo);
+        drawOldBunrMap(rows, geo);
         drawOhResidMap(geo);
+        drawDualShift();
         drawDeleMap(rows, geo);
         drawSajeonMap(geo);
         drawDiffMap(geo);
@@ -1878,6 +1924,161 @@
           .style("fill", "#8a8178")
           .text("오세훈 +6.0만");
         noteAt(x1 - 14, 2681660, 2445585, "민주 +23.6만", "end");
+      }
+
+      /* ── 재건축 동네의 시장·구청장 동반 보수화 (겹친 산점도 + 평행 회귀선) ── */
+      // y = 대선 대비 보수화(국힘 양자율 − 김문수 양자율, %p). 구청장은 구 평균 편차 제거.
+      // 풀 안정(dele 0~9%)·분양 25%+·강보수(a25<−15)·성동·반포본동 제외 33개 동.
+      function drawDualShift() {
+        if (d3.select("#dual-shift").empty()) return;
+        const DUALSHIFT = [{"gu": "종로구", "dong": "무악동", "ob": 0.0, "sm": 5.56, "sg": 4.2, "vt": 4352}, {"gu": "중구", "dong": "동화동", "ob": 0.0, "sm": 2.77, "sg": 1.33, "vt": 5483}, {"gu": "광진구", "dong": "광장동", "ob": 16.7, "sm": 6.44, "sg": 3.32, "vt": 16585}, {"gu": "강북구", "dong": "번3동", "ob": 10.9, "sm": 4.87, "sg": 2.22, "vt": 8059}, {"gu": "도봉구", "dong": "쌍문4동", "ob": 31.5, "sm": 4.96, "sg": 3.14, "vt": 9013}, {"gu": "도봉구", "dong": "방학3동", "ob": 20.7, "sm": 3.97, "sg": 2.0, "vt": 13764}, {"gu": "도봉구", "dong": "창1동", "ob": 24.5, "sm": 5.74, "sg": 4.03, "vt": 11553}, {"gu": "도봉구", "dong": "창4동", "ob": 24.4, "sm": 7.24, "sg": 5.81, "vt": 14419}, {"gu": "도봉구", "dong": "창5동", "ob": 13.6, "sm": 6.22, "sg": 4.46, "vt": 12723}, {"gu": "노원구", "dong": "월계2동", "ob": 0.0, "sm": 3.78, "sg": 1.45, "vt": 12431}, {"gu": "노원구", "dong": "월계3동", "ob": 21.8, "sm": 5.58, "sg": 2.35, "vt": 14252}, {"gu": "노원구", "dong": "공릉2동", "ob": 3.3, "sm": 5.26, "sg": 2.32, "vt": 20461}, {"gu": "노원구", "dong": "하계1동", "ob": 18.1, "sm": 4.46, "sg": 0.9, "vt": 12448}, {"gu": "노원구", "dong": "중계본동", "ob": 0.0, "sm": 6.24, "sg": 2.23, "vt": 10251}, {"gu": "노원구", "dong": "중계1동", "ob": 0.0, "sm": 6.75, "sg": 3.5, "vt": 11829}, {"gu": "노원구", "dong": "중계4동", "ob": 6.6, "sm": 4.62, "sg": 3.91, "vt": 9542}, {"gu": "노원구", "dong": "상계1동", "ob": 0.0, "sm": 4.12, "sg": 3.37, "vt": 18275}, {"gu": "노원구", "dong": "상계8동", "ob": 41.9, "sm": 7.68, "sg": 4.19, "vt": 10981}, {"gu": "노원구", "dong": "상계9동", "ob": 52.4, "sm": 7.15, "sg": 5.58, "vt": 10294}, {"gu": "노원구", "dong": "상계10동", "ob": 49.4, "sm": 7.51, "sg": 5.11, "vt": 9583}, {"gu": "노원구", "dong": "상계6·7동", "ob": 53.6, "sm": 8.27, "sg": 4.59, "vt": 15524}, {"gu": "노원구", "dong": "중계2·3동", "ob": 32.0, "sm": 5.26, "sg": 1.41, "vt": 16818}, {"gu": "서대문구", "dong": "천연동", "ob": 0.0, "sm": 6.13, "sg": 4.85, "vt": 9221}, {"gu": "양천구", "dong": "목1동", "ob": 12.1, "sm": 7.45, "sg": 5.02, "vt": 13776}, {"gu": "양천구", "dong": "신정2동", "ob": 1.1, "sm": 5.47, "sg": 3.73, "vt": 10172}, {"gu": "양천구", "dong": "신정7동", "ob": 16.4, "sm": 5.72, "sg": 4.63, "vt": 14141}, {"gu": "양천구", "dong": "목5동", "ob": 33.5, "sm": 7.62, "sg": 5.5, "vt": 19946}, {"gu": "강서구", "dong": "염창동", "ob": 1.1, "sm": 5.12, "sg": 3.45, "vt": 20981}, {"gu": "구로구", "dong": "신도림동", "ob": 2.9, "sm": 5.33, "sg": 2.29, "vt": 19155}, {"gu": "영등포구", "dong": "문래동", "ob": 10.7, "sm": 4.38, "sg": 1.09, "vt": 16032}, {"gu": "관악구", "dong": "청림동", "ob": 0.0, "sm": 5.29, "sg": 3.13, "vt": 8034}, {"gu": "강남구", "dong": "일원본동", "ob": 0.0, "sm": 6.66, "sg": 4.47, "vt": 11571}, {"gu": "강남구", "dong": "수서동", "ob": 0.0, "sm": 5.32, "sg": 2.63, "vt": 8060}];
+        const DS_FIT = { m: [5.079, 0.0428], g: [2.924, 0.0315] };
+        const M_COL = "#a82810",
+          G_COL = "#c0875f";
+        const m = { t: 40, r: 150, b: 52, l: 64 },
+          W = 860,
+          H = 440;
+        const svg = d3
+          .select("#dual-shift")
+          .append("svg")
+          .attr("viewBox", `0 0 ${W} ${H}`);
+        const xs = d3
+          .scaleLinear()
+          .domain([0, 56])
+          .range([m.l, W - m.r]);
+        const ys = d3
+          .scaleLinear()
+          .domain([0, 9])
+          .range([H - m.b, m.t]);
+        const rs = d3
+          .scaleSqrt()
+          .domain([0, d3.max(DUALSHIFT, (d) => d.vt)])
+          .range([2.5, 8]);
+        // 그리드 + 축
+        ys.ticks(5).forEach((t) =>
+          svg
+            .append("line")
+            .attr("x1", m.l)
+            .attr("x2", W - m.r)
+            .attr("y1", ys(t))
+            .attr("y2", ys(t))
+            .attr("stroke", "#ece0d0"),
+        );
+        svg
+          .append("g")
+          .attr("class", "axis")
+          .attr("transform", `translate(${m.l},0)`)
+          .call(
+            d3
+              .axisLeft(ys)
+              .ticks(5)
+              .tickFormat((d) => "+" + d + "%p"),
+          );
+        svg
+          .append("g")
+          .attr("class", "axis")
+          .attr("transform", `translate(0,${H - m.b})`)
+          .call(
+            d3
+              .axisBottom(xs)
+              .ticks(6)
+              .tickFormat((d) => d + "%"),
+          );
+        svg
+          .append("text")
+          .attr("x", (m.l + W - m.r) / 2)
+          .attr("y", H - 12)
+          .attr("text-anchor", "middle")
+          .style("font-size", "12px")
+          .style("fill", "#66605c")
+          .text("노후(준공 35년+) 분양 세대 ÷ 유권자");
+        svg
+          .append("text")
+          .attr("transform", `translate(16,${(m.t + H - m.b) / 2}) rotate(-90)`)
+          .attr("text-anchor", "middle")
+          .style("font-size", "12px")
+          .style("fill", "#66605c")
+          .text("대선 대비 보수화 (양자 %p)");
+        // 회귀선 + 우측 라벨
+        [
+          [DS_FIT.m, M_COL, null, "시장 +0.4%p/10%p"],
+          [DS_FIT.g, G_COL, "6 4", "구청장 +0.3%p/10%p"],
+        ].forEach(([f, col, dash, lab]) => {
+          svg
+            .append("line")
+            .attr("x1", xs(0))
+            .attr("y1", ys(f[0]))
+            .attr("x2", xs(56))
+            .attr("y2", ys(f[0] + f[1] * 56))
+            .attr("stroke", col)
+            .attr("stroke-width", 2)
+            .attr("stroke-dasharray", dash)
+            .attr("opacity", 0.85);
+          svg
+            .append("text")
+            .attr("x", xs(56) + 8)
+            .attr("y", ys(f[0] + f[1] * 56) + 4)
+            .style("font-size", "11.5px")
+            .style("font-weight", "700")
+            .style("fill", col)
+            .text(lab);
+        });
+        // 점: 시장(채움) / 구청장(빈 원)
+        const mk = (ycol, col, hollow) =>
+          svg
+            .append("g")
+            .selectAll("circle")
+            .data(DUALSHIFT)
+            .join("circle")
+            .attr("class", "pt")
+            .attr("cx", (d) => xs(d.ob))
+            .attr("cy", (d) => ys(d[ycol]))
+            .attr("r", (d) => rs(d.vt || 8000))
+            .attr("fill", hollow ? "#fef7f000" : col)
+            .attr("fill-opacity", hollow ? 1 : 0.75)
+            .attr("stroke", col)
+            .attr("stroke-width", hollow ? 1.4 : 0)
+            .classed("keepstroke", hollow)
+            .attr("data-stroke0", hollow ? col : null)
+            .attr("data-sw0", hollow ? 1.4 : null);
+        const selG = mk("sg", G_COL, true);
+        const selM = mk("sm", M_COL, false);
+        bindTip(
+          selM,
+          (d) =>
+            `<div class="tt-name">${d.gu} ${d.dong}</div>` +
+            `<div class="tt-row">노후 분양 ÷ 유권자: <b>${d.ob}%</b></div>` +
+            `<div class="tt-row">시장 보수화: <b>+${d.sm}%p</b> · 구청장(보정): <b>+${d.sg}%p</b></div>`,
+        );
+        bindTip(
+          selG,
+          (d) =>
+            `<div class="tt-name">${d.gu} ${d.dong}</div>` +
+            `<div class="tt-row">노후 분양 ÷ 유권자: <b>${d.ob}%</b></div>` +
+            `<div class="tt-row">구청장(보정) 보수화: <b>+${d.sg}%p</b> · 시장: <b>+${d.sm}%p</b></div>`,
+        );
+        // 대표 동 라벨
+        [
+          ["상계6·7동", "노원구", "상계주공", -10, 0],
+          ["목5동", "양천구", "목동5", -10, 0],
+          ["창4동", "도봉구", "창동", -10, 0],
+        ].forEach(([dong, gu, txt, dy, dx]) => {
+          const d = DUALSHIFT.find((r) => r.dong === dong && r.gu === gu);
+          if (!d) return;
+          svg
+            .append("text")
+            .attr("class", "ptlabel")
+            .attr("x", xs(d.ob) + dx)
+            .attr("y", ys(d.sm) + dy)
+            .attr("text-anchor", "middle")
+            .text(txt);
+        });
+        // 범례
+        const lg = svg.append("g").attr("transform", `translate(${m.l + 8},${m.t - 14})`);
+        lg.append("circle").attr("cx", 6).attr("cy", 0).attr("r", 5).attr("fill", M_COL).attr("fill-opacity", 0.75);
+        lg.append("text").attr("x", 16).attr("y", 4).style("font-size", "11.5px").style("fill", "#444").text("시장 보수화");
+        lg.append("circle").attr("cx", 116).attr("cy", 0).attr("r", 5).attr("fill", "none").attr("stroke", G_COL).attr("stroke-width", 1.4);
+        lg.append("text").attr("x", 126).attr("y", 4).style("font-size", "11.5px").style("fill", "#444").text("구청장 보수화(구 보정)");
       }
 
       /* ── 공통 산점도 ── */
@@ -3202,7 +3403,106 @@
           .attr("stroke-linejoin", "round");
       }
 
-      function drawRedevMap(rows, geo) {
+      /* ── 노후 분양 아파트 분포(준공 35년+ 분양세대 ÷ 유권자) 지도 ── */
+      function drawOldBunrMap(rows, geo) {
+        const W = 600,
+          H = 470;
+        const obOf = new Map(
+          rows
+            .filter((r) => r.oldbunr != null)
+            .map((r) => [r.gu + "|" + r.dong, r.oldbunr]),
+        );
+        const cscale = d3
+          .scaleLinear()
+          .domain([0, 0.1, 0.4])
+          .range(["#f3ead9", "#dfa57e", "#8c2d1b"])
+          .clamp(true);
+        const svg = d3
+          .select("#oldbunr-map")
+          .append("svg")
+          .attr("viewBox", `0 0 ${W} ${H}`)
+          .style("max-width", "640px")
+          .style("margin", "0 auto");
+        const proj = d3.geoMercator().fitExtent(
+          [
+            [10, 10],
+            [W - 10, H - 30],
+          ],
+          geo,
+        );
+        const path = d3.geoPath(proj);
+        svg
+          .selectAll("path")
+          .data(geo.features)
+          .join("path")
+          .attr("d", path)
+          .attr("stroke", "#fef7f0")
+          .attr("stroke-width", 0.4)
+          .attr("fill", (d) => {
+            const v = obOf.get(d.properties.gu + "|" + d.properties.dong);
+            return v == null ? "#efe7d8" : cscale(v);
+          })
+          .style("cursor", "pointer")
+          .on("mouseenter", function (ev, d) {
+            const p = d.properties,
+              v = obOf.get(p.gu + "|" + p.dong);
+            ttShow(
+              `<div class="tt-name">${p.gu} ${p.dong}</div>` +
+                (v == null
+                  ? `<div class="tt-row" style="color:#aaa">아파트 자료 없음</div>`
+                  : `<div class="tt-row">노후 분양 ÷ 유권자: <b>${(v * 100).toFixed(1)}%</b></div>`),
+            );
+            d3.select(this)
+              .attr("stroke", "#222")
+              .attr("stroke-width", 1.2)
+              .raise();
+          })
+          .on("mousemove", ttMove)
+          .on("mouseleave", function () {
+            ttHide();
+            d3.select(this).attr("stroke", "#fef7f0").attr("stroke-width", 0.4);
+          });
+        drawGuBorders(svg, path, geo);
+        drawHan(svg, path, geo, "oldbunr");
+        // 연속 범례
+        const lx = 20,
+          ly = H - 18,
+          segs = 24,
+          sw = 4;
+        for (let i = 0; i < segs; i++) {
+          svg
+            .append("rect")
+            .attr("x", lx + i * sw)
+            .attr("y", ly - 10)
+            .attr("width", sw + 0.5)
+            .attr("height", 9)
+            .attr("fill", cscale((0.4 * i) / (segs - 1)));
+        }
+        svg
+          .append("text")
+          .attr("x", lx)
+          .attr("y", ly + 12)
+          .style("font-size", "10px")
+          .style("fill", "#888")
+          .text("0%");
+        svg
+          .append("text")
+          .attr("x", lx + segs * sw)
+          .attr("y", ly + 12)
+          .attr("text-anchor", "end")
+          .style("font-size", "10px")
+          .style("fill", "#888")
+          .text("40%+");
+        svg
+          .append("text")
+          .attr("x", lx + segs * sw + 8)
+          .attr("y", ly - 2)
+          .style("font-size", "10px")
+          .style("fill", "#888")
+          .text("노후 분양 ÷ 유권자");
+      }
+
+      function drawRedevMapLegacy(rows, geo) {
         const W = 600,
           H = 470;
         const svg = d3
