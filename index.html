@@ -245,7 +245,7 @@
         padding: 9px 12px;
         font-size: 12.5px;
         line-height: 1.5;
-        max-width: 240px;
+        max-width: 280px;
         transition: opacity 0.1s;
       }
       #tooltip .tt-name {
@@ -259,6 +259,37 @@
       #tooltip .tt-row b {
         color: var(--ink);
         font-weight: 700;
+      }
+      #tooltip .tt-section {
+        margin-top: 6px;
+        color: #8a8178;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      #tooltip .tt-cand {
+        display: grid;
+        grid-template-columns: 54px 58px 64px;
+        gap: 0 7px;
+        align-items: baseline;
+        color: #5f574f;
+      }
+      #tooltip .tt-cand-name {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      #tooltip .tt-cand-pct,
+      #tooltip .tt-cand-gap {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      #tooltip .tt-cand-gap {
+        font-weight: 800;
+      }
+      #tooltip .tt-cand.is-lead {
+        color: var(--cand);
+      }
+      #tooltip .tt-cand.is-lead .tt-cand-pct {
+        font-weight: 800;
       }
       /* 범례 */
       .legend {
@@ -819,7 +850,7 @@
       <figure class="wide">
         <div class="fig-title">동별 대선 대비 표 변화</div>
         <div class="fig-sub">
-          대선과 비교하여 대각선 위는 오세훈이 더 많이 받은 동네, 아래는
+          대선과 비교하여 대각선 위는 오세훈이 더 많이 받은 동네, 오른쪽은
           정원오가 더 많이 받은 동네.
         </div>
         <div class="chart" id="sc-turnout2"></div>
@@ -839,7 +870,7 @@
         <p>
           각 동별로 이준석 표 절반이 갔다고 보정하고 대선과 시장선거에서
           정원오·오세훈 후보가 각각 얼마나 득표율이 변했는지를 표시했다. 대선과
-          비교해 대각선 위로는 오세훈이 더 많이 받고 아래는 정원오 후보가 더
+          비교해 대각선 위로는 오세훈이 더 많이 받고 오른쪽은 정원오 후보가 더
           많이 받은 동네이다. 정치 성향보다 후보에 대한 지지가 더 크게
           작용했다고 볼 수 있다. 크게 두가지 덩어리가 보이는데, 아래 성동구는
           정원오 전 구청장에 대한 신임이 지지로 이어진 것으로 보이고, 위 오세훈
@@ -847,6 +878,11 @@
           가능하다.
         </p>
       </div>
+
+
+<p style="font-weight: 700; font-size: 17px; margin-top: 34px">
+          1. 투표율 변화 유형
+        </p>
 
       <figure class="wide">
         <div class="fig-title">진보·보수 잔존율 - 서울 평균과 특이 동</div>
@@ -905,15 +941,16 @@
       <div class="body">
         <p>
           네 동네의 이야기는 서울 전체로 일반화된다. 모든 동을 진보·보수
-          잔존율과 '구청장과의 갭'으로 군집화하면 여섯 유형이 나온다.
+          잔존율의 수준과 진보−보수 비대칭으로만 군집화하면 네 유형이 나온다.
+          표준형, 저잔존 도심형, 진보 잔존 우위, 보수 잔존 우위 순서다.
         </p>
       </div>
 
       <figure class="wide">
-        <div class="fig-title">잔존율 패턴으로 묶은 서울 동네 6유형</div>
+        <div class="fig-title">잔존율 패턴으로 묶은 서울 동네 4유형</div>
         <div class="fig-sub">
           막대 = 유형별 평균 잔존율(점선 = 서울 평균). 아래 지도 = 유형별 위치
-          — 색 = 2026 시장 득표율차, 회색 = 다른 유형.
+          — 구청장 효과 축은 빼고 시장 잔존율 패턴만 남긴 분류.
         </div>
         <div class="chart" id="cluster-bars" style="max-width: 680px; margin: 0 auto"></div>
         <div
@@ -928,12 +965,33 @@
         ></div>
         <figcaption>
           자료: 중앙선거관리위원회. 414개 동(신축 입주·초소형 제외)을
-          [진보·보수 잔존율, 진보−보수 비대칭, 시장−구청장 잔존 갭(구 평균
-          편차)]로 k-평균 군집화(k=6). '시장 진보 이탈'은 같은 구 이웃 대비
-          시장 투표에서만 진보가 빠진 동(여의동 패턴), '선전'은 그 반대. 지도
-          색 = 시장 득표율차(파랑 정원오·빨강 오세훈, 관외 배분 반영).
+          [잔존 수준, 진보−보수 비대칭] 두 축으로 k-평균 군집화(k=4).지도 색 =
+          시장 득표율차(파랑 정원오·빨강 오세훈, 관외 배분 반영).
         </figcaption>
       </figure>
+
+      <div class="body">
+        <p>
+           <strong>표준형</strong>은 서울의 평균적인 지방선거 이탈이다. 진보와
+          보수 잔존율이 각각 80% 안팎으로 거의 같다. 대선보다 낮은 지방선거 투표율이 양쪽에 비슷하게 작동한
+          동네들이다.
+        </p>
+        <p>
+          <strong>저잔존 도심형</strong>은 종로·중구 도심과 대학가다.  "거주-생활 분리 + 지선 무관심" 유형이다. 거주지와 실제 생활·정치 관심 지역이 어긋난다. 지방선거에서는 “우리 동네 시장·구청장” 동기가 약해서 양쪽 표가 다 빠진다.
+        </p>
+        <p>
+          <strong>진보 잔존 우위</strong>
+          성동구는 비대칭 +13.6으로 독보적이다. 정원오 전 구청장 행정 만족도가 표로 나타났다. 나머지 지역은 비대칭이 +4정도이다.        </p>
+        <p>
+          <strong>보수 잔존 우위</strong>는 대체적으로 재개발·재건축 기대와 오세훈 지지가 함께 모이는 동네들이다.
+          여전히 정원오가 이긴 파란 동네도 들어오는데, 이들은 민주 우세 주거지이면서도 2025년에 비해 격차가 줄어든 곳들이다. 노원 상계처럼 정비 기대가 있는 곳도 있지만, 더 넓게는 아파트 주거지에서 오세훈 표가 상대적으로 단단하게 남은 곳이다.
+        </p>
+      </div>
+
+
+<p style="font-weight: 700; font-size: 17px; margin-top: 34px">
+          2. 재개발과 재건축이 표에 미친 영향
+        </p>
 
       <figure class="wide">
         <div class="fig-title">노후 분양 비중 vs 오세훈 추가 득표</div>
@@ -1126,6 +1184,7 @@
     <script src="data-junchg.js"></script>
     <script src="data-gwadj.js"></script>
     <script src="data-cartogram.js"></script>
+    <script src="data-cluster4.js"></script>
     <script>
       const OH = "#a82810",
         WON = "#0f5499";
@@ -1229,7 +1288,7 @@
         drawOldBunrMap(rows, geo);
         drawOhResidMap(geo);
         drawDualShift();
-        drawCluster6(geo);
+        drawCluster4(geo);
         drawDeleMap(rows, geo);
         drawSajeonMap(geo);
         drawDiffMap(geo);
@@ -1710,7 +1769,7 @@
 
       /* ── 표의 행방 생키: 2025 대선 → 2026 시장 ── */
       function drawSankey() {
-        if (d3.select("#sankey").empty()) return;
+        if (d3.select("#sankey").empty() && d3.select("#sankey-cross").empty()) return;
         const NO = "#c4baad",
           JUN = "#e6a45e";
         const W = 760,
@@ -2637,6 +2696,162 @@
           .style("font-size", "11.5px")
           .style("fill", "#444")
           .text("구청장 보수화(구 보정)");
+      }
+
+      /* ── 잔존율 4유형: 막대 + 스몰 멀티플 지도 ──
+         분석검증/cluster_janzon4.py 결과. 414개 동(신축·초소형 제외), k=4.
+         피처 = [잔존 수준, 진보−보수 비대칭] */
+      function drawCluster4(geo) {
+        if (d3.select("#cluster-bars").empty()) return;
+        const data = window.CLUSTER4_DATA;
+        if (!data || !data.groups || !data.members) return;
+        const CL4 = data.groups;
+        const nk = (s) => s.replace(/[제·.\s]/g, "");
+        const BLUE = "#6aa0d8",
+          RED = "#e88a7d";
+        const W = 760,
+          H = 238,
+          mg = { t: 28, r: 14, b: 44, l: 36 };
+        const iw = W - mg.l - mg.r,
+          ih = H - mg.t - mg.b;
+        const svg = d3
+          .select("#cluster-bars")
+          .append("svg")
+          .attr("viewBox", `0 0 ${W} ${H}`)
+          .style("width", "100%")
+          .style("height", "auto");
+        const lg = svg.append("g").attr("transform", `translate(${W / 2 - 90}, 6)`);
+        [["진보 잔존", BLUE, 0], ["보수 진영 잔존", RED, 86]].forEach(([t, c, x]) => {
+          lg.append("rect").attr("x", x).attr("width", 14).attr("height", 9).attr("rx", 2).attr("fill", c);
+          lg.append("text").attr("x", x + 18).attr("y", 8).attr("font-size", 11).attr("fill", "#444").text(t);
+        });
+        const gB = svg.append("g").attr("transform", `translate(${mg.l},${mg.t})`);
+        const x0 = d3.scaleBand().domain(CL4.map((d) => d.name)).range([0, iw]).paddingInner(0.28).paddingOuter(0.12);
+        const x1 = d3.scaleBand().domain(["mj", "gh"]).range([0, x0.bandwidth()]).padding(0.14);
+        const y = d3.scaleLinear().domain([0, 100]).range([ih, 0]);
+        y.ticks(4).forEach((t) =>
+          gB.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(t)).attr("y2", y(t)).attr("stroke", "#e6d9c9"));
+        y.ticks(4).forEach((t) =>
+          gB.append("text").attr("x", -7).attr("y", y(t) + 3).attr("text-anchor", "end").attr("font-size", 10).attr("fill", "#8a8178").text(t));
+        [[81, "#2f6aa3"], [84, "#bd5444"]].forEach(([v, c]) =>
+          gB.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(v)).attr("y2", y(v))
+            .attr("stroke", c).attr("stroke-width", 1).attr("stroke-dasharray", "4 3").attr("opacity", 0.55));
+        CL4.forEach((d) => {
+          [["mj", BLUE, "#2f6aa3"], ["gh", RED, "#bd5444"]].forEach(([k, col, dark]) => {
+            const bx = x0(d.name) + x1(k);
+            gB.append("rect").attr("x", bx).attr("y", y(d[k])).attr("width", x1.bandwidth())
+              .attr("height", ih - y(d[k])).attr("fill", col).attr("rx", 2);
+            gB.append("text").attr("x", bx + x1.bandwidth() / 2).attr("y", y(d[k]) - 5)
+              .attr("text-anchor", "middle").attr("font-size", 10.5).attr("font-weight", 800)
+              .attr("fill", dark).text(Math.round(d[k]));
+          });
+          const cx = x0(d.name) + x0.bandwidth() / 2;
+          gB.append("text").attr("x", cx).attr("y", ih + 16).attr("text-anchor", "middle")
+            .attr("font-size", 11).attr("font-weight", 700).attr("fill", "#1a1a1a").text(d.name);
+          gB.append("text").attr("x", cx).attr("y", ih + 29).attr("text-anchor", "middle")
+            .attr("font-size", 9.5).attr("fill", "#9a8f80").text(d.n + "개 동");
+        });
+
+        const ramp2 = d3
+          .scaleLinear()
+          .domain([-30, -10, 0, 10, 30])
+          .range(["#a82810", "#e08a80", "#fdf2e9", "#7ba0c8", "#0f5499"])
+          .clamp(true);
+        const rowByKey = new Map(ART_DATA.map((d) => [d.gu + "|" + nk(d.dong), d]));
+        const pct = (v) => (v == null || !Number.isFinite(v) ? "-" : v.toFixed(1) + "%");
+        const pctp = (v) => (v == null || !Number.isFinite(v) ? "" : "+" + Math.abs(v).toFixed(1) + "%p");
+        const candLine = (name, value, color, lead = false, gap = null) =>
+          `<div class="tt-cand${lead ? " is-lead" : ""}" style="--cand:${color}">` +
+          `<span class="tt-cand-name">${name}</span>` +
+          `<span class="tt-cand-pct">${pct(value)}</span>` +
+          `<span class="tt-cand-gap">${lead ? pctp(gap) : ""}</span>` +
+          `</div>`;
+        const share26Html = (row, margin) => {
+          if (!row || row.won == null || row.oh == null) {
+            return `<div class="tt-row" style="color:#aaa">시장 득표율 데이터 없음</div>`;
+          }
+          let total = null;
+          if (row.a26 && row.won !== row.oh) total = (100 * (row.won - row.oh)) / row.a26;
+          if (!total || !Number.isFinite(total) || total <= 0) total = row.won + row.oh;
+          const wonPct = total ? (row.won / total) * 100 : null;
+          const ohPct = total ? (row.oh / total) * 100 : null;
+          const m = margin == null && wonPct != null && ohPct != null ? wonPct - ohPct : margin;
+          const wonLead = m > 0;
+          const ohLead = m < 0;
+          return (
+            `<div class="tt-section">2026 시장</div>` +
+            candLine("정원오", wonPct, WON, wonLead, m) +
+            candLine("오세훈", ohPct, OH, ohLead, m)
+          );
+        };
+        const share25Html = (row) => {
+          if (!row || row.p25 == null || row.cons25 == null || row.jun == null) {
+            return `<div class="tt-row" style="color:#aaa">대선 후보별 데이터 없음</div>`;
+          }
+          const jun = row.jun * 100;
+          const twoGap = row.p25 - row.cons25;
+          let twoTotal = row.a25 != null && Math.abs(twoGap) > 1e-6 ? row.a25 / twoGap : null;
+          if (!twoTotal || !Number.isFinite(twoTotal) || twoTotal <= 0) twoTotal = Math.max(0, 100 - jun);
+          const lee = row.p25 * twoTotal;
+          const kim = row.cons25 * twoTotal;
+          const cands = [
+            { name: "이재명", value: lee, color: WON },
+            { name: "김문수", value: kim, color: OH },
+            { name: "이준석", value: jun, color: "#8b6f2f" },
+          ].sort((a, b) => b.value - a.value);
+          const leadName = cands[0].name;
+          const leadGap = cands[0].value - cands[1].value;
+          return (
+            `<div class="tt-section">2025 대선</div>` +
+            candLine("이재명", lee, WON, leadName === "이재명", leadGap) +
+            candLine("김문수", kim, OH, leadName === "김문수", leadGap) +
+            candLine("이준석", jun, "#8b6f2f", leadName === "이준석", leadGap)
+          );
+        };
+        const cont = d3.select("#cluster-maps");
+        CL4.forEach((c) => {
+          const cell = cont.append("div").style("flex", "0 1 44%").style("max-width", "330px").style("min-width", "210px");
+          cell.append("div").style("text-align", "center").style("font-size", "11.5px")
+            .style("font-weight", "700").style("color", "#3a3026").text(`${c.name} · ${c.n}`);
+          const sv = cell.append("svg").attr("viewBox", "0 0 600 470").style("width", "100%").style("height", "auto");
+          const proj = d3.geoMercator().fitExtent([[8, 8], [592, 462]], geo);
+          const path = d3.geoPath(proj);
+          const isMemb = (f) =>
+            data.members[f.properties.gu + "|" + nk(f.properties.dong)] === c.cl;
+          sv.selectAll("path.dd").data(geo.features).join("path")
+            .attr("d", path)
+            .attr("fill", (f) =>
+              isMemb(f) ? ramp2(f.properties.a26 != null ? f.properties.a26 : 0) : "#eae2d3")
+            .attr("fill-opacity", (f) => (isMemb(f) ? 1 : 0.45))
+            .attr("stroke", (f) => (isMemb(f) ? "#8a7a66" : "#fef7f0"))
+            .attr("stroke-width", (f) => (isMemb(f) ? 0.8 : 0.4))
+            .style("cursor", "default")
+            .on("mouseenter", function (ev, f) {
+              const key = f.properties.gu + "|" + nk(f.properties.dong);
+              const margin = f.properties.a26;
+              const row = rowByKey.get(key);
+              d3.select(this)
+                .attr("stroke", "#2a2520")
+                .attr("stroke-width", isMemb(f) ? 1.2 : 0.8)
+                .raise();
+              ttShow(
+                `<div class="tt-name">${f.properties.gu} ${f.properties.dong}</div>` +
+                  share26Html(row, margin) +
+                  share25Html(row),
+              );
+              ttMove(ev);
+            })
+            .on("mousemove", ttMove)
+            .on("mouseleave", function (ev, f) {
+              ttHide();
+              d3.select(this)
+                .attr("stroke", isMemb(f) ? "#8a7a66" : "#fef7f0")
+                .attr("stroke-width", isMemb(f) ? 0.8 : 0.4);
+              sv.selectAll(".gu-borders,.han-layer").raise();
+            });
+          drawGuBorders(sv, path, geo);
+          drawHan(sv, path, geo, "cl4" + c.cl);
+        });
       }
 
       /* ── 잔존율 6유형: 막대 + 스몰 멀티플 지도 ──
@@ -4051,7 +4266,7 @@
           const topo = topojson.topology({ s: geo });
           clip = topojson.merge(topo, topo.objects.s.geometries);
         }
-        let g = svg.append("g").attr("pointer-events", "none");
+        let g = svg.append("g").attr("class", "han-layer").attr("pointer-events", "none");
         if (clip) {
           const cid = "hanclip-" + id;
           svg
