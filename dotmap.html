@@ -204,10 +204,12 @@ function pathSeoul() {
     }
   }
 }
+const SHADE_ALPHA = 0.5;   // 한강·산·공원 셰이드 전체 투명도
 function drawHanFill() {
   ctx.save();
   pathSeoul();
   ctx.clip();
+  ctx.globalAlpha = SHADE_ALPHA;
   for (const f of HAN.features) { tracePoly(f.geometry); ctx.fillStyle = '#f3e6d4'; ctx.fill(); }
   ctx.restore();
 }
@@ -274,7 +276,9 @@ forestCanvas.width = cv.width; forestCanvas.height = cv.height;
 })();
 function drawForestShade() {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = SHADE_ALPHA;
   ctx.drawImage(forestCanvas, 0, 0);
+  ctx.globalAlpha = 1;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 function drawBoundaries() {
