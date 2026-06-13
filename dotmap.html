@@ -231,7 +231,18 @@ forestCanvas.width = cv.width; forestCanvas.height = cv.height;
     }
   }
   fx.clip();
-  const HATCH_GAP = 4.5, HATCH_W = 0.8, HATCH_COLOR = 'rgba(108,92,68,0.55)';
+  // 해칭 패턴 타일 (대각선 빗금) — 산림 채움용
+  const TS = 6;                       // 타일 한 변(user/ CSS px)
+  const tile = document.createElement('canvas');
+  tile.width = tile.height = TS;
+  const tx = tile.getContext('2d');
+  tx.strokeStyle = 'rgba(108,92,68,0.65)';
+  tx.lineWidth = 1;
+  tx.beginPath();
+  tx.moveTo(-1, TS + 1); tx.lineTo(TS + 1, -1);   // 좌하→우상 대각선, 타일 경계서 이어짐
+  tx.stroke();
+  const hatchPattern = fx.createPattern(tile, 'repeat');
+
   function polyPath(p) {
     const path = new Path2D();
     p.o.forEach(([lon, lat], i) => {
@@ -254,24 +265,11 @@ forestCanvas.width = cv.width; forestCanvas.height = cv.height;
     fx.fillStyle = '#f3e6d4';
     fx.fill(polyPath(p), 'evenodd');
   }
-  // 산림: 면 대신 대각선 해칭 (종이톤 위 웜그레이 빗금)
-  fx.strokeStyle = HATCH_COLOR;
-  fx.lineWidth = HATCH_W;
+  // 산림: 면 대신 대각선 해칭 패턴으로 채움
+  fx.fillStyle = hatchPattern;
   for (const p of FOREST) {
     if (p.k !== 'forest') continue;
-    const b = p.b;
-    const [x0, y0] = [sx(b[0]), sy(b[3])];   // 좌상
-    const [x1, y1] = [sx(b[2]), sy(b[1])];   // 우하
-    fx.save();
-    fx.clip(polyPath(p), 'evenodd');
-    const h = y1 - y0;
-    for (let x = x0 - h; x <= x1; x += HATCH_GAP) {
-      fx.beginPath();
-      fx.moveTo(x, y0);
-      fx.lineTo(x + h, y1);                   // 45° 빗금
-      fx.stroke();
-    }
-    fx.restore();
+    fx.fill(polyPath(p), 'evenodd');
   }
 })();
 function drawForestShade() {
