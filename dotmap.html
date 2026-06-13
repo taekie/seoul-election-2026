@@ -1,711 +1,1143 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2026 서울시장 득표 도트맵</title>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-9P480FT8BY"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-9P480FT8BY');
-</script>
-<style>
-  :root { --bg: #fef7f0; --ink: #1a1a1a; --muted: #66605c; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: var(--bg); color: var(--ink);
-    font-family: 'KoddiUD OnGothic', -apple-system, BlinkMacSystemFont, sans-serif;
-    display: flex; flex-direction: column; align-items: center;
-    min-height: 100vh; padding: 28px 16px;
-  }
-  h1 { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
-  .sub { font-size: 12.5px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
-  .controls { display: flex; gap: 18px; align-items: center; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
-  .seg {
-    display: inline-flex; gap: 2px; padding: 3px;
-    background: #f0e6d8; border: 1px solid #e6d9c9; border-radius: 9px;
-  }
-  .seg button {
-    appearance: none; border: none; background: transparent; cursor: pointer;
-    font-family: inherit; font-size: 12.5px; color: var(--muted);
-    padding: 4px 14px; border-radius: 6px;
-  }
-  .seg button:hover { color: var(--ink); }
-  .seg button.on {
-    background: #fff; color: var(--ink); font-weight: 700;
-    box-shadow: 0 1px 2px rgba(26,26,26,.1), 0 0 0 0.5px rgba(26,26,26,.04);
-  }
-  .legend { display: flex; gap: 22px; align-items: center; font-size: 13px; }
-  .legend .item { display: flex; align-items: center; gap: 7px; }
-  .legend .dot { width: 9px; height: 9px; border-radius: 50%; }
-  .legend b { font-variant-numeric: tabular-nums; }
-  .gap { color: var(--muted); font-size: 12px; }
-  .legend-minor { margin-top: 7px; font-size: 11.5px; color: var(--muted); transition: opacity .3s; }
-  .legend-minor .dot { width: 7px; height: 7px; }
-  .legend-minor b { color: var(--ink); font-weight: 600; }
-  .monly { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; color: var(--ink); }
-  .monly input { accent-color: #5f574f; cursor: pointer; margin: 0; }
-  .monly .u { color: var(--muted); font-size: 10.5px; }
-  #wrap { width: 100%; max-width: 1000px; margin-top: 10px; position: relative; }
-  canvas { width: 100%; height: auto; display: block; }
-  #tip {
-    position: absolute; pointer-events: none; display: none;
-    background: #fff; border: 1px solid #e6d9c9; border-radius: 6px;
-    padding: 8px 11px; font-size: 12px; line-height: 1.6;
-    box-shadow: 0 2px 10px rgba(26,26,26,.12); white-space: nowrap; z-index: 5;
-  }
-  #tip .tn { font-weight: 700; font-size: 12.5px; margin-bottom: 2px; }
-  #tip .tg { color: var(--muted); font-weight: 400; font-size: 11px; }
-  #tip .row { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
-  #tip .sw { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
-  #tip .diff { margin-top: 3px; padding-top: 3px; border-top: 1px solid #f0e6d8; color: var(--muted); font-size: 11px; }
-  #tip .row.minor { font-size: 11px; color: var(--muted); }
-  #tip .row.minor b { color: #4a4540; font-weight: 600; }
-  .share-sel {
-    display: none; flex-wrap: wrap; justify-content: center; gap: 6px;
-    margin-top: 12px; max-width: 1000px;
-  }
-  .share-sel.show { display: flex; }
-  .share-sel button {
-    appearance: none; cursor: pointer; font-family: inherit; font-size: 12px;
-    color: var(--ink); background: #fff; border: 1px solid #e6d9c9;
-    border-radius: 16px; padding: 4px 12px; display: inline-flex; align-items: center; gap: 6px;
-  }
-  .share-sel button .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-  .share-sel button:hover { border-color: #c9b89e; }
-  .share-sel button.on { background: #2a2a2a; color: #fff; border-color: #2a2a2a; }
-  .note { font-size: 11px; color: #8a8178; margin-top: 8px; text-align: center; }
-  .note a { color: #8a8178; text-decoration: none; border-bottom: 1px solid #d9cbb8; }
-  .note a:hover { color: var(--ink); }
-</style>
-</head>
-<body>
-  <h1>2026 서울시장 선거 — 한 점 = 100표</h1>
-  <div class="sub">동별 득표수만큼 동 경계 안에 무작위 배치 (한강·산림·대형공원 제외, 관외·거소투표는 동별 득표 비율로 배분)</div>
-  <div class="controls">
-    <div class="seg" id="seg">
-      <button class="on" data-mode="dist">분포</button>
-      <button data-mode="margin">득표차</button>
-      <button data-mode="share">득표율</button>
-    </div>
-    <div class="legend">
-      <div class="item"><span class="dot" style="background:#2e6fc9"></span>정원오 <b>2,515,560</b></div>
-      <div class="item"><span class="dot" style="background:#e0301e"></span>오세훈 <b>2,575,819</b></div>
-      <div class="gap" id="gapText">격차 60,259표 (점 602개 차이)</div>
-    </div>
-  </div>
-  <div class="legend legend-minor" id="legendMinor">
-    <label class="monly"><input type="checkbox" id="minorOnly"> 소수정당만 <span class="u" id="minorUnit"></span></label>
-    <div class="item"><span class="dot" style="background:#f0461a"></span>개혁신당 <b>36,279</b></div>
-    <div class="item"><span class="dot" style="background:#9b3fb5"></span>여성의당 <b>37,719</b></div>
-    <div class="item"><span class="dot" style="background:#f2b705"></span>정의당 <b>45,561</b></div>
-  </div>
-  <div id="wrap"><canvas id="cv"></canvas><div id="tip"></div></div>
-  <div class="share-sel" id="shareSel">
-    <button class="on" data-party="margin">양당 득표율차</button>
-    <button data-party="0"><span class="dot" style="background:#2e6fc9"></span>정원오</button>
-    <button data-party="1"><span class="dot" style="background:#e0301e"></span>오세훈</button>
-    <button data-party="2"><span class="dot" style="background:#f0461a"></span>개혁신당</button>
-    <button data-party="3"><span class="dot" style="background:#9b3fb5"></span>여성의당</button>
-    <button data-party="4"><span class="dot" style="background:#f2b705"></span>정의당</button>
-  </div>
-  <div class="note">점 위치는 동 단위 무작위 배치(산림·대형공원 제외: OSM)로, 실제 거주지를 나타내지 않음 · 자료: 중앙선거관리위원회 · <a href="https://x.com/taekie" target="_blank" rel="noopener">無異</a></div>
-
-<script src="data-dotmap.js"></script>
-<script src="seoul_gu.js"></script>
-<script src="data-han.js"></script>
-<script src="data-forest.js"></script>
-<script>
-const D = window.DOTMAP;
-const GU = window.SEOUL_GEO;
-const HAN = window.HAN;
-const FOREST = window.FOREST || [];
-const COLOR_WON = '#2e6fc9', COLOR_OH = '#e0301e';
-// 소수정당: 개혁신당(주황)·여성의당(보라)·정의당(노랑)
-const COLOR_MINOR = ['#f0461a', '#9b3fb5', '#f2b705'];
-const MINOR_NAMES = ['개혁신당', '여성의당', '정의당'];
-const R0 = 1.05, R1 = 2.0;          // 분포 점 / 득표차 점 반지름
-const TOTAL_MS = 4800;              // 토글 애니메이션 전체 길이
-
-// 전처리와 동일한 투영: px=(lon-126.97)*cos(37.56°), py=lat-37.56
-const LON0 = 126.97, LAT0 = 37.56, COS_LAT = Math.cos(37.56 * Math.PI / 180);
-const proj = (lon, lat) => [(lon - LON0) * COS_LAT, lat - LAT0];
-
-// 화면 맞춤: 구 경계 전체 bbox 기준
-let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-for (const f of GU.features) {
-  const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
-  for (const poly of polys) for (const [lon, lat] of poly[0]) {
-    const [x, y] = proj(lon, lat);
-    if (x < minX) minX = x; if (x > maxX) maxX = x;
-    if (y < minY) minY = y; if (y > maxY) maxY = y;
-  }
-}
-
-const cv = document.getElementById('cv');
-const ctx = cv.getContext('2d');
-const PAD = 12;
-const cssW = Math.min(1000, document.getElementById('wrap').clientWidth);
-const scale = (cssW - PAD * 2) / (maxX - minX);
-const cssH = Math.ceil((maxY - minY) * scale + PAD * 2);
-const dpr = Math.min(window.devicePixelRatio || 1, 2);
-cv.width = cssW * dpr; cv.height = cssH * dpr;
-cv.style.maxWidth = cssW + 'px';
-
-const sx = x => PAD + (x - minX) * scale;
-const sy = y => cssH - PAD - (y - minY) * scale;   // y 뒤집기 (북쪽 위)
-
-// 시드 고정 LCG (리로드해도 같은 연출)
-let seed = 20260613;
-const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
-
-// ── 페어(상쇄) + 생존자(득표차) 구성 ─────────────────────────────────
-// pairs: 빨강·파랑 1:1 매칭 — 서로에게 다가가 부딪히고 소멸
-// survivors: 매칭 안 된 승자 점 — 균등 배치 좌표(d.m)로 이동하며 커짐
-const pairs = [];      // {ax,ay,bx,by,mx,my,ux,uy,d0,dur}  a=won, b=oh
-const survivors = [];  // {x0,y0,x1,y1,c,d0,dur}
-const minorDots = [];    // [x, y, partyIdx] — 분포 오버레이(1점=100표)
-const minorDots10 = [];  // [x, y, partyIdx] — 소수정당만(1점=10표)
-
-for (const d of D.dongs) {
-  for (const [mx, my, c] of (d.mp || []))
-    minorDots.push([sx(mx), sy(my), c]);
-  for (const [mx, my, c] of (d.mp10 || []))
-    minorDots10.push([sx(mx), sy(my), c]);
-  const W = d.w.map(p => [sx(p[0]), sy(p[1])]);
-  const O = d.o.map(p => [sx(p[0]), sy(p[1])]);
-  const wonIsMajor = W.length >= O.length;
-  const minor = wonIsMajor ? O : W;
-  const major = wonIsMajor ? W : O;
-  const used = new Uint8Array(major.length);
-
-  for (const [px, py] of minor) {
-    let bi = -1, bd = Infinity;
-    for (let i = 0; i < major.length; i++) {
-      if (used[i]) continue;
-      const dx = major[i][0] - px, dy = major[i][1] - py;
-      const d2 = dx * dx + dy * dy;
-      if (d2 < bd) { bd = d2; bi = i; }
-    }
-    used[bi] = 1;
-    const [qx, qy] = major[bi];
-    const ax = wonIsMajor ? qx : px, ay = wonIsMajor ? qy : py;
-    const bx = wonIsMajor ? px : qx, by = wonIsMajor ? py : qy;
-    const mx = (ax + bx) / 2, my = (ay + by) / 2;
-    const len = Math.hypot(bx - ax, by - ay) || 1;
-    pairs.push({ ax, ay, bx, by, mx, my,
-      ux: -(by - ay) / len, uy: (bx - ax) / len,   // 수직 방향 (떨림용)
-      d0: rnd() * 0.45, dur: 0.28 });
-  }
-
-  // 생존자: 미매칭 major → d.m(균등 좌표)에 최근접 배정
-  const rest = [];
-  for (let i = 0; i < major.length; i++) if (!used[i]) rest.push(major[i]);
-  const targets = d.m.map(p => [sx(p[0]), sy(p[1])]);
-  const tUsed = new Uint8Array(targets.length);
-  for (const [px, py] of rest) {
-    let bi = -1, bd = Infinity;
-    for (let i = 0; i < targets.length; i++) {
-      if (tUsed[i]) continue;
-      const dx = targets[i][0] - px, dy = targets[i][1] - py;
-      const d2 = dx * dx + dy * dy;
-      if (d2 < bd) { bd = d2; bi = i; }
-    }
-    let x1 = px, y1 = py;
-    if (bi >= 0) { tUsed[bi] = 1; x1 = targets[bi][0]; y1 = targets[bi][1]; }
-    survivors.push({ x0: px, y0: py, x1, y1,
-      c: wonIsMajor ? 0 : 1, d0: 0.66 + rnd() * 0.12, dur: 0.22 });
-  }
-}
-
-const ease = s => s < 0.5 ? 2 * s * s : 1 - (-2 * s + 2) ** 2 / 2;
-
-// ── 배경·경계 레이어 ─────────────────────────────────────────────────
-function tracePoly(geom) {
-  ctx.beginPath();
-  const polys = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates;
-  for (const poly of polys) for (const ring of poly) {
-    ring.forEach(([lon, lat], i) => {
-      const [x, y] = proj(lon, lat);
-      i === 0 ? ctx.moveTo(sx(x), sy(y)) : ctx.lineTo(sx(x), sy(y));
-    });
-    ctx.closePath();
-  }
-}
-function pathSeoul() {
-  ctx.beginPath();
-  for (const f of GU.features) {
-    const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
-    for (const poly of polys) {
-      poly[0].forEach(([lon, lat], i) => {
-        const [x, y] = proj(lon, lat);
-        i === 0 ? ctx.moveTo(sx(x), sy(y)) : ctx.lineTo(sx(x), sy(y));
-      });
-      ctx.closePath();
-    }
-  }
-}
-const SHADE_ALPHA = 0.5;   // 한강·산·공원 셰이드 전체 투명도
-function drawHanFill() {
-  ctx.save();
-  pathSeoul();
-  ctx.clip();
-  ctx.globalAlpha = SHADE_ALPHA;
-  for (const f of HAN.features) { tracePoly(f.geometry); ctx.fillStyle = '#f3e6d4'; ctx.fill(); }
-  ctx.restore();
-}
-
-// 산림 셰이드: 오프스크린에 한 번만 렌더(매 프레임 drawImage)
-const forestCanvas = document.createElement('canvas');
-forestCanvas.width = cv.width; forestCanvas.height = cv.height;
-(function renderForest() {
-  const fx = forestCanvas.getContext('2d');
-  fx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  // 서울 경계로 클리핑(경계 밖 숲 잘라냄)
-  fx.beginPath();
-  for (const f of GU.features) {
-    const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
-    for (const poly of polys) {
-      poly[0].forEach(([lon, lat], i) => {
-        const [x, y] = proj(lon, lat);
-        i === 0 ? fx.moveTo(sx(x), sy(y)) : fx.lineTo(sx(x), sy(y));
-      });
-      fx.closePath();
-    }
-  }
-  fx.clip();
-  // 해칭 패턴 타일 (대각선 빗금) — 산림 채움용
-  const TS = 6;                       // 타일 한 변(user/ CSS px)
-  const tile = document.createElement('canvas');
-  tile.width = tile.height = TS;
-  const tx = tile.getContext('2d');
-  tx.strokeStyle = 'rgba(178,130,58,0.85)';   // 채도 있는 황토/세피아, 얇게
-  tx.lineWidth = 0.6;
-  tx.beginPath();
-  tx.moveTo(-1, TS + 1); tx.lineTo(TS + 1, -1);   // 좌하→우상 대각선, 타일 경계서 이어짐
-  tx.stroke();
-  const hatchPattern = fx.createPattern(tile, 'repeat');
-
-  function polyPath(p) {
-    const path = new Path2D();
-    p.o.forEach(([lon, lat], i) => {
-      const [x, y] = proj(lon, lat);
-      i === 0 ? path.moveTo(sx(x), sy(y)) : path.lineTo(sx(x), sy(y));
-    });
-    path.closePath();
-    for (const hole of p.i) {           // 구멍(숲·공원 안 공터)
-      hole.forEach(([lon, lat], i) => {
-        const [x, y] = proj(lon, lat);
-        i === 0 ? path.moveTo(sx(x), sy(y)) : path.lineTo(sx(x), sy(y));
-      });
-      path.closePath();
-    }
-    return path;
-  }
-  // 공원: 한강과 같은 웜톤 면
-  for (const p of FOREST) {
-    if (p.k === 'forest') continue;
-    fx.fillStyle = '#f3e6d4';
-    fx.fill(polyPath(p), 'evenodd');
-  }
-  // 산림: 면 대신 대각선 해칭 패턴으로 채움
-  fx.fillStyle = hatchPattern;
-  for (const p of FOREST) {
-    if (p.k !== 'forest') continue;
-    fx.fill(polyPath(p), 'evenodd');
-  }
-})();
-function drawForestShade() {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalAlpha = SHADE_ALPHA;
-  ctx.drawImage(forestCanvas, 0, 0);
-  ctx.globalAlpha = 1;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-function drawBoundaries() {
-  // 구 경계 (한강 내부 제외 — 인버스 클리핑), 케이싱
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, 0, cssW, cssH);
-  for (const f of HAN.features) {
-    for (const ring of f.geometry.coordinates) {
-      ring.forEach(([lon, lat], i) => {
-        const [x, y] = proj(lon, lat);
-        i === 0 ? ctx.moveTo(sx(x), sy(y)) : ctx.lineTo(sx(x), sy(y));
-      });
-      ctx.closePath();
-    }
-  }
-  ctx.clip('evenodd');
-  ctx.strokeStyle = '#fef7f0'; ctx.lineWidth = 2.6;
-  for (const f of GU.features) { tracePoly(f.geometry); ctx.stroke(); }
-  ctx.strokeStyle = '#3a3026'; ctx.lineWidth = 1.1;
-  for (const f of GU.features) { tracePoly(f.geometry); ctx.stroke(); }
-  ctx.restore();
-  // 한강 윤곽 케이싱
-  ctx.save();
-  pathSeoul();
-  ctx.clip();
-  for (const f of HAN.features) { tracePoly(f.geometry); }
-  ctx.strokeStyle = '#fef7f0'; ctx.lineWidth = 2.6; ctx.stroke();
-  ctx.strokeStyle = '#3a3026'; ctx.lineWidth = 1.1; ctx.stroke();
-  ctx.restore();
-}
-
-// ── 장면 그리기 (t: 0=분포, 1=득표차) ────────────────────────────────
-const TAU = Math.PI * 2;
-let minorOnly = false;   // '소수정당만' 체크 (분포 모드 전용)
-function drawScene(t) {
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, cssW, cssH);
-  drawHanFill();
-  drawForestShade();
-
-  // 소수정당만 보기: 양당 점 숨기고 1점=10표 밀도로 표시
-  if (minorOnly && t < 0.001) {
-    const RM = 1.4;
-    const mp = [new Path2D(), new Path2D(), new Path2D()];
-    for (const [x, y, c] of minorDots10) { mp[c].moveTo(x + RM, y); mp[c].arc(x, y, RM, 0, TAU); }
-    ctx.globalAlpha = 0.95;
-    for (let c = 0; c < 3; c++) { ctx.fillStyle = COLOR_MINOR[c]; ctx.fill(mp[c]); }
-    ctx.globalAlpha = 1;
-    drawBoundaries();
-    return;
-  }
-
-  const pathW = new Path2D(), pathO = new Path2D();
-  const fading = [];   // 페이드 중인 점만 개별 알파로
-
-  for (const p of pairs) {
-    const s = (t - p.d0) / p.dur;
-    if (s <= 0) {
-      pathW.moveTo(p.ax + R0, p.ay); pathW.arc(p.ax, p.ay, R0, 0, TAU);
-      pathO.moveTo(p.bx + R0, p.by); pathO.arc(p.bx, p.by, R0, 0, TAU);
-    } else if (s < 1) {
-      const e = ease(Math.min(s / 0.8, 1));
-      let ax = p.ax + (p.mx - p.ax) * e, ay = p.ay + (p.my - p.ay) * e;
-      let bx = p.bx + (p.mx - p.bx) * e, by = p.by + (p.my - p.by) * e;
-      if (s > 0.55) {                          // 부딪히며 떨림
-        const sh = Math.sin(s * 55) * 1.3 * (1 - s);
-        ax += p.ux * sh; ay += p.uy * sh;
-        bx -= p.ux * sh; by -= p.uy * sh;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 서울시장 득표 도트맵</title>
+    <!-- Google tag (gtag.js) -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-9P480FT8BY"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
       }
-      const alpha = s < 0.72 ? 0.95 : 0.95 * (1 - (s - 0.72) / 0.28);
-      const r = R0 * (1 + 0.45 * Math.sin(Math.min(s, 1) * Math.PI));
-      if (alpha >= 0.94) {
-        pathW.moveTo(ax + r, ay); pathW.arc(ax, ay, r, 0, TAU);
-        pathO.moveTo(bx + r, by); pathO.arc(bx, by, r, 0, TAU);
-      } else {
-        fading.push([ax, ay, r, 0, alpha], [bx, by, r, 1, alpha]);
+      gtag("js", new Date());
+      gtag("config", "G-9P480FT8BY");
+    </script>
+    <style>
+      :root {
+        --bg: #fef7f0;
+        --ink: #1a1a1a;
+        --muted: #66605c;
       }
-    }
-  }
-  for (const v of survivors) {
-    const u = Math.max(0, Math.min(1, (t - v.d0) / v.dur));
-    const e = ease(u);
-    const x = v.x0 + (v.x1 - v.x0) * e, y = v.y0 + (v.y1 - v.y0) * e;
-    const r = R0 + (R1 - R0) * e;
-    if (v.c === 0) { pathW.moveTo(x + r, y); pathW.arc(x, y, r, 0, TAU); }
-    else { pathO.moveTo(x + r, y); pathO.arc(x, y, r, 0, TAU); }
-  }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          "KoddiUD OnGothic",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        padding: 28px 16px;
+      }
+      h1 {
+        font-size: 19px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+      .sub {
+        font-size: 12.5px;
+        color: var(--muted);
+        margin-top: 6px;
+        line-height: 1.5;
+      }
+      .controls {
+        display: flex;
+        gap: 18px;
+        align-items: center;
+        margin-top: 14px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .seg {
+        display: inline-flex;
+        gap: 2px;
+        padding: 3px;
+        background: #f0e6d8;
+        border: 1px solid #e6d9c9;
+        border-radius: 9px;
+      }
+      .seg button {
+        appearance: none;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12.5px;
+        color: var(--muted);
+        padding: 4px 14px;
+        border-radius: 6px;
+      }
+      .seg button:hover {
+        color: var(--ink);
+      }
+      .seg button.on {
+        background: #fff;
+        color: var(--ink);
+        font-weight: 700;
+        box-shadow:
+          0 1px 2px rgba(26, 26, 26, 0.1),
+          0 0 0 0.5px rgba(26, 26, 26, 0.04);
+      }
+      .legend {
+        display: flex;
+        gap: 22px;
+        align-items: center;
+        font-size: 13px;
+      }
+      .legend .item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .legend .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+      }
+      .legend b {
+        font-variant-numeric: tabular-nums;
+      }
+      .gap {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .legend-minor {
+        margin-top: 7px;
+        font-size: 11.5px;
+        color: var(--muted);
+        transition: opacity 0.3s;
+      }
+      .legend-minor .dot {
+        width: 7px;
+        height: 7px;
+      }
+      .legend-minor b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .monly {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        user-select: none;
+        color: var(--ink);
+      }
+      .monly input {
+        accent-color: #5f574f;
+        cursor: pointer;
+        margin: 0;
+      }
+      .monly .u {
+        color: var(--muted);
+        font-size: 10.5px;
+      }
+      #wrap {
+        width: 100%;
+        max-width: 1000px;
+        margin-top: 10px;
+        position: relative;
+      }
+      canvas {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      #tip {
+        position: absolute;
+        pointer-events: none;
+        display: none;
+        background: #fff;
+        border: 1px solid #e6d9c9;
+        border-radius: 6px;
+        padding: 8px 11px;
+        font-size: 12px;
+        line-height: 1.6;
+        box-shadow: 0 2px 10px rgba(26, 26, 26, 0.12);
+        white-space: nowrap;
+        z-index: 5;
+      }
+      #tip .tn {
+        font-weight: 700;
+        font-size: 12.5px;
+        margin-bottom: 2px;
+      }
+      #tip .tg {
+        color: var(--muted);
+        font-weight: 400;
+        font-size: 11px;
+      }
+      #tip .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        font-variant-numeric: tabular-nums;
+      }
+      #tip .sw {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        margin-right: 5px;
+      }
+      #tip .diff {
+        margin-top: 3px;
+        padding-top: 3px;
+        border-top: 1px solid #f0e6d8;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      #tip .row.minor {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      #tip .row.minor b {
+        color: #4a4540;
+        font-weight: 600;
+      }
+      .share-sel {
+        display: none;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 12px;
+        max-width: 1000px;
+      }
+      .share-sel.show {
+        display: flex;
+      }
+      .share-sel button {
+        appearance: none;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+        color: var(--ink);
+        background: #fff;
+        border: 1px solid #e6d9c9;
+        border-radius: 16px;
+        padding: 4px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .share-sel button .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .share-sel button:hover {
+        border-color: #c9b89e;
+      }
+      .share-sel button.on {
+        background: #2a2a2a;
+        color: #fff;
+        border-color: #2a2a2a;
+      }
+      .note {
+        font-size: 11px;
+        color: #8a8178;
+        margin-top: 8px;
+        text-align: center;
+      }
+      .note a {
+        color: #8a8178;
+        text-decoration: none;
+        border-bottom: 1px solid #d9cbb8;
+      }
+      .note a:hover {
+        color: var(--ink);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>2026 서울시장 선거 — 한 점 = 100표</h1>
+    <div class="sub">
+      동별 득표수만큼 동 경계 안에 무작위 배치 (한강·산림·대형공원 제외,
+      관외·거소투표는 동별 득표 비율로 배분)
+    </div>
+    <div class="controls">
+      <div class="seg" id="seg">
+        <button class="on" data-mode="dist">분포</button>
+        <button data-mode="margin">득표차</button>
+        <button data-mode="share">득표율</button>
+      </div>
+      <div class="legend">
+        <div class="item">
+          <span class="dot" style="background: #2e6fc9"></span>정원오
+          <b>2,515,560</b>
+        </div>
+        <div class="item">
+          <span class="dot" style="background: #e0301e"></span>오세훈
+          <b>2,575,819</b>
+        </div>
+        <div class="gap" id="gapText">격차 60,259표 (점 602개 차이)</div>
+      </div>
+    </div>
+    <div class="legend legend-minor" id="legendMinor">
+      <label class="monly"
+        ><input type="checkbox" id="minorOnly" /> 소수정당만
+        <span class="u" id="minorUnit"></span
+      ></label>
+      <div class="item">
+        <span class="dot" style="background: #f0461a"></span>개혁신당
+        <b>36,279</b>
+      </div>
+      <div class="item">
+        <span class="dot" style="background: #9b3fb5"></span>여성의당
+        <b>37,719</b>
+      </div>
+      <div class="item">
+        <span class="dot" style="background: #f2b705"></span>정의당
+        <b>45,561</b>
+      </div>
+    </div>
+    <div id="wrap">
+      <canvas id="cv"></canvas>
+      <div id="tip"></div>
+    </div>
+    <div class="share-sel" id="shareSel">
+      <button class="on" data-party="margin">양당 득표율차</button>
+      <button data-party="0">
+        <span class="dot" style="background: #2e6fc9"></span>정원오
+      </button>
+      <button data-party="1">
+        <span class="dot" style="background: #e0301e"></span>오세훈
+      </button>
+      <button data-party="2">
+        <span class="dot" style="background: #f0461a"></span>개혁신당
+      </button>
+      <button data-party="3">
+        <span class="dot" style="background: #9b3fb5"></span>여성의당
+      </button>
+      <button data-party="4">
+        <span class="dot" style="background: #f2b705"></span>정의당
+      </button>
+    </div>
+    <div class="note">
+      점 위치는 동 단위 무작위 배치(산림·대형공원 제외: OSM)로, 실제 거주지를
+      나타내지 않음 · 자료: 중앙선거관리위원회 ·
+      <a href="https://x.com/taekie" target="_blank" rel="noopener">無異</a>
+    </div>
 
-  ctx.globalAlpha = 0.95;
-  ctx.fillStyle = COLOR_WON; ctx.fill(pathW);
-  ctx.fillStyle = COLOR_OH; ctx.fill(pathO);
-  for (const [x, y, r, c, a] of fading) {
-    ctx.globalAlpha = a;
-    ctx.fillStyle = c === 0 ? COLOR_WON : COLOR_OH;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
-  }
+    <script src="data-dotmap.js"></script>
+    <script src="seoul_gu.js"></script>
+    <script src="data-han.js"></script>
+    <script src="data-forest.js"></script>
+    <script>
+      const D = window.DOTMAP;
+      const GU = window.SEOUL_GEO;
+      const HAN = window.HAN;
+      const FOREST = window.FOREST || [];
+      const COLOR_WON = "#2e6fc9",
+        COLOR_OH = "#e0301e";
+      // 소수정당: 개혁신당(주황)·여성의당(보라)·정의당(노랑)
+      const COLOR_MINOR = ["#f0461a", "#9b3fb5", "#f2b705"];
+      const MINOR_NAMES = ["개혁신당", "여성의당", "정의당"];
+      const R0 = 1.25,
+        R1 = 2.1; // 분포 점 / 득표차 점 반지름
+      const TOTAL_MS = 4800; // 토글 애니메이션 전체 길이
 
-  // 소수정당 점: 분포(t=0)에만, 득표차로 가며 페이드아웃 (t≥0.5면 소멸)
-  const minorAlpha = Math.max(0, 1 - t / 0.5);
-  if (minorAlpha > 0.01) {
-    const RM = 1.7;
-    const mp = [new Path2D(), new Path2D(), new Path2D()];
-    for (const [x, y, c] of minorDots) { mp[c].moveTo(x + RM, y); mp[c].arc(x, y, RM, 0, TAU); }
-    ctx.globalAlpha = minorAlpha;
-    for (let c = 0; c < 3; c++) { ctx.fillStyle = COLOR_MINOR[c]; ctx.fill(mp[c]); }
-  }
-  ctx.globalAlpha = 1;
+      // 전처리와 동일한 투영: px=(lon-126.97)*cos(37.56°), py=lat-37.56
+      const LON0 = 126.97,
+        LAT0 = 37.56,
+        COS_LAT = Math.cos((37.56 * Math.PI) / 180);
+      const proj = (lon, lat) => [(lon - LON0) * COS_LAT, lat - LAT0];
 
-  drawBoundaries();
-}
+      // 화면 맞춤: 구 경계 전체 bbox 기준
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
+      for (const f of GU.features) {
+        const polys =
+          f.geometry.type === "Polygon"
+            ? [f.geometry.coordinates]
+            : f.geometry.coordinates;
+        for (const poly of polys)
+          for (const [lon, lat] of poly[0]) {
+            const [x, y] = proj(lon, lat);
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+      }
 
-// ── 득표율 코로플레스 레이어 ─────────────────────────────────────────
-// 발산 램프 (기사 카토그램과 동일): 오세훈 우세 → 빨강, 정원오 우세 → 파랑
-const RAMP = ['#d8503f', '#f4988a', '#fbeede', '#8ec2ee', '#4a8fd6'];
-const CLAMP_PP = 30;   // ±30%p에서 색 포화
-function hex2rgb(h) { return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); }
-const RAMP_RGB = RAMP.map(hex2rgb);
-function rampColor(u) {           // u: 0(빨강 끝) ~ 1(파랑 끝)
-  const x = Math.max(0, Math.min(1, u)) * (RAMP_RGB.length - 1);
-  const i = Math.min(Math.floor(x), RAMP_RGB.length - 2);
-  const f = x - i;
-  const c = RAMP_RGB[i].map((v, k) => Math.round(v + (RAMP_RGB[i + 1][k] - v) * f));
-  return `rgb(${c[0]},${c[1]},${c[2]})`;
-}
-// 동 폴리곤 path는 한 번만 계산
-const sharePaths = D.dongs.map(d => {
-  const path = new Path2D();
-  d.r.forEach(([x, y], i) =>
-    i === 0 ? path.moveTo(sx(x), sy(y)) : path.lineTo(sx(x), sy(y)));
-  path.closePath();
-  return path;
-});
+      const cv = document.getElementById("cv");
+      const ctx = cv.getContext("2d");
+      const PAD = 12;
+      const cssW = Math.min(1000, document.getElementById("wrap").clientWidth);
+      const scale = (cssW - PAD * 2) / (maxX - minX);
+      const cssH = Math.ceil((maxY - minY) * scale + PAD * 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cv.width = cssW * dpr;
+      cv.height = cssH * dpr;
+      cv.style.maxWidth = cssW + "px";
 
-// 5개 정당: 이름·색 (정원오·오세훈·개혁·여성·정의)
-const PARTIES = [
-  { name: '정원오', color: COLOR_WON },
-  { name: '오세훈', color: COLOR_OH },
-  { name: '개혁신당', color: COLOR_MINOR[0] },
-  { name: '여성의당', color: COLOR_MINOR[1] },
-  { name: '정의당', color: COLOR_MINOR[2] },
-];
-// 동별 정당 득표율(%) + 정당별 최대값(색 스케일용)
-const v5sum = D.dongs.map(d => (d.v5 || [0,0,0,0,0]).reduce((a, b) => a + b, 0) || 1);
-const partyShare = PARTIES.map((_, pi) =>
-  D.dongs.map((d, i) => (d.v5 ? d.v5[pi] : 0) / v5sum[i] * 100));
-const partyMax = partyShare.map(arr => Math.max(...arr) || 1);
+      const sx = (x) => PAD + (x - minX) * scale;
+      const sy = (y) => cssH - PAD - (y - minY) * scale; // y 뒤집기 (북쪽 위)
 
-const BASE_RGB = [246, 239, 230];   // 옅은 종이톤(0% 끝)
-function seqColor(pi, u) {           // 정당 색으로 향하는 순차 램프
-  const tt = Math.sqrt(Math.max(0, Math.min(1, u)));   // 저득표 영역 가시성
-  const c = hex2rgb(PARTIES[pi].color);
-  return `rgb(${BASE_RGB.map((b, k) => Math.round(b + (c[k] - b) * tt)).join(',')})`;
-}
+      // 시드 고정 LCG (리로드해도 같은 연출)
+      let seed = 20260613;
+      const rnd = () =>
+        (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
 
-// shareMode: 'margin'(양당 득표율차, 기본) 또는 0~4(개별 정당)
-let shareMode = 'margin';
-function dongShareColor(i) {
-  if (shareMode === 'margin') {
-    const d = D.dongs[i];
-    const m = (d.oh - d.won) / (d.oh + d.won) * 100;
-    const u = (1 - Math.max(-CLAMP_PP, Math.min(CLAMP_PP, m)) / CLAMP_PP) / 2;
-    return rampColor(u);
-  }
-  return seqColor(shareMode, partyShare[shareMode][i] / partyMax[shareMode]);
-}
-function drawShare(alpha) {
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  for (let i = 0; i < sharePaths.length; i++) {
-    ctx.fillStyle = dongShareColor(i);
-    ctx.fill(sharePaths[i]);
-    ctx.strokeStyle = 'rgba(254,247,240,0.7)';
-    ctx.lineWidth = 0.5;
-    ctx.stroke(sharePaths[i]);
-  }
-  // 강은 코로플레스 위에 다시 깔아 마스킹
-  ctx.save();
-  pathSeoul();
-  ctx.clip();
-  for (const f of HAN.features) { tracePoly(f.geometry); ctx.fillStyle = '#f3e6d4'; ctx.fill(); }
-  ctx.restore();
-  drawBoundaries();
-  ctx.restore();
-}
+      // ── 페어(상쇄) + 생존자(득표차) 구성 ─────────────────────────────────
+      // pairs: 빨강·파랑 1:1 매칭 — 서로에게 다가가 부딪히고 소멸
+      // survivors: 매칭 안 된 승자 점 — 균등 배치 좌표(d.m)로 이동하며 커짐
+      const pairs = []; // {ax,ay,bx,by,mx,my,ux,uy,d0,dur}  a=won, b=oh
+      const survivors = []; // {x0,y0,x1,y1,c,d0,dur}
+      const minorDots = []; // [x, y, partyIdx] — 분포 오버레이(1점=100표)
+      const minorDots10 = []; // [x, y, partyIdx] — 소수정당만(1점=10표)
 
-// ── 토글 + 애니메이션 ────────────────────────────────────────────────
-let t = 0, target = 0, raf = null, lastTs = 0;
-let shareA = 0, shareTarget = 0;
-const SHARE_MS = 500;
-const base = document.createElement('canvas');
-base.width = cv.width; base.height = cv.height;
-const gapText = document.getElementById('gapText');
-const legendMinor = document.getElementById('legendMinor');
-const minorOnlyCb = document.getElementById('minorOnly');
-const minorUnit = document.getElementById('minorUnit');
-const shareSel = document.getElementById('shareSel');
-shareSel.addEventListener('click', ev => {
-  const btn = ev.target.closest('button');
-  if (!btn) return;
-  for (const b of shareSel.querySelectorAll('button')) b.classList.toggle('on', b === btn);
-  const p = btn.dataset.party;
-  shareMode = p === 'margin' ? 'margin' : +p;
-  hideTip();
-  if (shareA >= 1 && !raf) { drawFrame(); snapshotBase(); updateGap(); }
-});
-minorOnlyCb.addEventListener('change', () => {
-  minorOnly = minorOnlyCb.checked;
-  minorUnit.textContent = minorOnly ? '· 한 점 = 10표' : '';
-  hideTip();
-  if (!raf) { drawFrame(); snapshotBase(); updateGap(); }
-});
-function updateGap() {
-  if (shareA === 1) {
-    if (shareMode === 'margin') {
-      gapText.textContent = '동별 득표율차 · 빨강 = 오세훈 우세, 파랑 = 정원오 우세 (±30%p)';
-    } else {
-      gapText.textContent =
-        `${PARTIES[shareMode].name} 동별 득표율 · 색이 진할수록 높음 (최고 ${partyMax[shareMode].toFixed(1)}%)`;
-    }
-    return;
-  }
-  gapText.textContent = minorOnly
-    ? '소수정당만 · 한 점 = 10표'
-    : t === 1
-      ? '상쇄 후 남은 격차만 표시 · 한 점 = 100표'
-      : '격차 60,259표 (점 602개 차이)';
-}
+      for (const d of D.dongs) {
+        // 소수정당만(1점=10표)도 정의|여성|개혁 순으로 x정렬 → 좌우 비율 띠
+        {
+          const mp10 = d.mp10 || [];
+          const nJ = mp10.filter((m) => m[2] === 2).length,
+            nY = mp10.filter((m) => m[2] === 1).length;
+          const pool10 = mp10.map((m) => [sx(m[0]), sy(m[1])]);
+          pool10.sort((a, b) => a[0] - b[0]);
+          let j = 0;
+          for (const p of pool10.slice(j, (j += nJ))) minorDots10.push([p[0], p[1], 2]);
+          for (const p of pool10.slice(j, (j += nY))) minorDots10.push([p[0], p[1], 1]);
+          for (const p of pool10.slice(j)) minorDots10.push([p[0], p[1], 0]);
+        }
+        // 분포 기본뷰 = 비율에 따른 좌우 분리 (소수정당도 가운데 띠로):
+        // 동 안 모든 점을 x좌표로 정렬 → 정원오|정의|여성|개혁|오세훈 순(성향 좌→우)으로 분배
+        const nw = d.w.length,
+          no = d.o.length,
+          mp = d.mp || [];
+        const nJus = mp.filter((m) => m[2] === 2).length, // 정의
+          nYeo = mp.filter((m) => m[2] === 1).length, // 여성
+          nHyuk = mp.filter((m) => m[2] === 0).length; // 개혁
+        const pool = [];
+        for (const p of d.w) pool.push([sx(p[0]), sy(p[1])]);
+        for (const p of d.o) pool.push([sx(p[0]), sy(p[1])]);
+        for (const [mx, my] of mp) pool.push([sx(mx), sy(my)]);
+        pool.sort((a, b) => a[0] - b[0]);
+        let idx = 0;
+        const W = pool.slice(idx, (idx += nw));
+        const jusP = pool.slice(idx, (idx += nJus));
+        const yeoP = pool.slice(idx, (idx += nYeo));
+        const hyukP = pool.slice(idx, (idx += nHyuk));
+        const O = pool.slice(idx, (idx += no));
+        for (const p of jusP) minorDots.push([p[0], p[1], 2]);
+        for (const p of yeoP) minorDots.push([p[0], p[1], 1]);
+        for (const p of hyukP) minorDots.push([p[0], p[1], 0]);
+        const wonIsMajor = W.length >= O.length;
+        const minor = wonIsMajor ? O : W;
+        const major = wonIsMajor ? W : O;
+        const used = new Uint8Array(major.length);
 
-function snapshotBase() {
-  base.getContext('2d').clearRect(0, 0, base.width, base.height);
-  base.getContext('2d').drawImage(cv, 0, 0);
-}
-function drawFrame() {
-  if (shareA >= 1) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, cssW, cssH);
-    drawShare(1);
-  } else {
-    drawScene(t);
-    if (shareA > 0) drawShare(shareA);
-  }
-}
-function settle() {
-  drawFrame();
-  snapshotBase();
-  updateGap();
-}
-function step(ts) {
-  if (!lastTs) lastTs = ts;
-  const dtMs = ts - lastTs;
-  lastTs = ts;
-  if (t !== target) {
-    t += Math.sign(target - t) * dtMs / TOTAL_MS;
-    if (t < 0) t = 0; if (t > 1) t = 1;
-    if (Math.abs(t - target) < 1e-4) t = target;
-  }
-  if (shareA !== shareTarget) {
-    shareA += Math.sign(shareTarget - shareA) * dtMs / SHARE_MS;
-    if (shareA < 0) shareA = 0; if (shareA > 1) shareA = 1;
-    if (Math.abs(shareA - shareTarget) < 1e-3) shareA = shareTarget;
-  }
-  if (t === target && shareA === shareTarget) {
-    raf = null; settle(); return;
-  }
-  drawFrame();
-  raf = requestAnimationFrame(step);
-}
-document.getElementById('seg').addEventListener('click', ev => {
-  const btn = ev.target.closest('button');
-  if (!btn) return;
-  for (const b of document.querySelectorAll('#seg button')) b.classList.toggle('on', b === btn);
-  const mode = btn.dataset.mode;
-  if (mode === 'share') { shareTarget = 1; }            // 점 상태는 유지한 채 페이드인
-  else { shareTarget = 0; target = mode === 'margin' ? 1 : 0; }
-  // 소수정당 범례·체크박스는 분포 모드에서만
-  if (mode !== 'dist' && minorOnly) {
-    minorOnlyCb.checked = false; minorOnly = false; minorUnit.textContent = '';
-  }
-  legendMinor.style.opacity = mode === 'dist' ? '1' : '0';
-  legendMinor.style.pointerEvents = mode === 'dist' ? 'auto' : 'none';
-  shareSel.classList.toggle('show', mode === 'share');   // 정당 선택은 득표율 모드만
-  hideTip();
-  if (!raf) { lastTs = 0; raf = requestAnimationFrame(step); }
-});
+        for (const [px, py] of minor) {
+          let bi = -1,
+            bd = Infinity;
+          for (let i = 0; i < major.length; i++) {
+            if (used[i]) continue;
+            const dx = major[i][0] - px,
+              dy = major[i][1] - py;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < bd) {
+              bd = d2;
+              bi = i;
+            }
+          }
+          used[bi] = 1;
+          const [qx, qy] = major[bi];
+          const ax = wonIsMajor ? qx : px,
+            ay = wonIsMajor ? qy : py;
+          const bx = wonIsMajor ? px : qx,
+            by = wonIsMajor ? py : qy;
+          const mx = (ax + bx) / 2,
+            my = (ay + by) / 2;
+          const len = Math.hypot(bx - ax, by - ay) || 1;
+          pairs.push({
+            ax,
+            ay,
+            bx,
+            by,
+            mx,
+            my,
+            ux: -(by - ay) / len,
+            uy: (bx - ax) / len, // 수직 방향 (떨림용)
+            d0: rnd() * 0.45,
+            dur: 0.28,
+          });
+        }
 
-// ── 호버: 동 영역 정보 툴팁 + 하이라이트 (애니메이션 중엔 비활성) ──────
-for (const d of D.dongs) {
-  let a = Infinity, b = Infinity, c = -Infinity, e = -Infinity;
-  for (const [x, y] of d.r) {
-    if (x < a) a = x; if (x > c) c = x;
-    if (y < b) b = y; if (y > e) e = y;
-  }
-  d.bbox = [a, b, c, e];
-}
-function inRing(px, py, ring) {
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [xi, yi] = ring[i], [xj, yj] = ring[j];
-    if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi)
-      inside = !inside;
-  }
-  return inside;
-}
-const tip = document.getElementById('tip');
-const fmt = n => n.toLocaleString('ko-KR');
-let cur = null;
-function hideTip() {
-  cur = null;
-  tip.style.display = 'none';
-}
-function redraw(hl) {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, cv.width, cv.height);
-  ctx.drawImage(base, 0, 0);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (hl) {
-    ctx.beginPath();
-    hl.r.forEach(([x, y], i) =>
-      i === 0 ? ctx.moveTo(sx(x), sy(y)) : ctx.lineTo(sx(x), sy(y)));
-    ctx.closePath();
-    ctx.strokeStyle = '#1a1a1a';
-    ctx.lineWidth = 1.4;
-    ctx.stroke();
-  }
-}
-cv.addEventListener('mousemove', ev => {
-  if (raf) return;                             // 애니메이션 중 비활성
-  const rect = cv.getBoundingClientRect();
-  const ratio = rect.width / cssW;
-  const mx = (ev.clientX - rect.left) / ratio;
-  const my = (ev.clientY - rect.top) / ratio;
-  const px = (mx - PAD) / scale + minX;
-  const py = (cssH - PAD - my) / scale + minY;
+        // 생존자: 미매칭 major → d.m(균등 좌표)에 최근접 배정
+        const rest = [];
+        for (let i = 0; i < major.length; i++)
+          if (!used[i]) rest.push(major[i]);
+        const targets = d.m.map((p) => [sx(p[0]), sy(p[1])]);
+        const tUsed = new Uint8Array(targets.length);
+        for (const [px, py] of rest) {
+          let bi = -1,
+            bd = Infinity;
+          for (let i = 0; i < targets.length; i++) {
+            if (tUsed[i]) continue;
+            const dx = targets[i][0] - px,
+              dy = targets[i][1] - py;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < bd) {
+              bd = d2;
+              bi = i;
+            }
+          }
+          let x1 = px,
+            y1 = py;
+          if (bi >= 0) {
+            tUsed[bi] = 1;
+            x1 = targets[bi][0];
+            y1 = targets[bi][1];
+          }
+          survivors.push({
+            x0: px,
+            y0: py,
+            x1,
+            y1,
+            c: wonIsMajor ? 0 : 1,
+            d0: 0.66 + rnd() * 0.12,
+            dur: 0.22,
+          });
+        }
 
-  let hit = null;
-  for (const d of D.dongs) {
-    const [a, b, c, e] = d.bbox;
-    if (px < a || px > c || py < b || py > e) continue;
-    if (inRing(px, py, d.r)) { hit = d; break; }
-  }
-  if (hit !== cur) {
-    cur = hit;
-    redraw(hit);
-    if (hit) {
-      const tot = hit.won + hit.oh;
-      const diff = hit.oh - hit.won;
-      const leader = diff > 0 ? '오세훈' : '정원오';
-      const lColor = diff > 0 ? COLOR_OH : COLOR_WON;
-      const pctGap = (Math.abs(diff) / tot * 100).toFixed(1);
-      const mark = c => (c === 'won') === (diff < 0)
-        ? ` <b style="color:${lColor}">+${pctGap}%p</b>` : '';
-      const mv = hit.mv || [0, 0, 0];
-      const minorRows = mv.map((v, c) => v > 0
-        ? `<div class="row minor"><span><span class="sw" style="background:${COLOR_MINOR[c]}"></span>${MINOR_NAMES[c]}</span><b>${fmt(v)}</b></div>`
-        : '').join('');
-      tip.innerHTML =
-        `<div class="tn">${hit.n} <span class="tg">${hit.g}</span></div>` +
-        `<div class="row"><span><span class="sw" style="background:${COLOR_WON}"></span>정원오${mark('won')}</span><b>${fmt(hit.won)} (${(hit.won / tot * 100).toFixed(1)}%)</b></div>` +
-        `<div class="row"><span><span class="sw" style="background:${COLOR_OH}"></span>오세훈${mark('oh')}</span><b>${fmt(hit.oh)} (${(hit.oh / tot * 100).toFixed(1)}%)</b></div>` +
-        minorRows +
-        `<div class="diff">정원오·오세훈은 양자 기준(관외 배분), 소수정당은 동 집계</div>`;
-      tip.style.display = 'block';
-    } else {
-      tip.style.display = 'none';
-    }
-  }
-  if (hit) {
-    const wrapRect = document.getElementById('wrap').getBoundingClientRect();
-    let tx = ev.clientX - wrapRect.left + 14;
-    let ty = ev.clientY - wrapRect.top + 14;
-    if (tx + tip.offsetWidth > wrapRect.width - 4) tx -= tip.offsetWidth + 26;
-    tip.style.left = tx + 'px';
-    tip.style.top = ty + 'px';
-  }
-});
-cv.addEventListener('mouseleave', () => {
-  if (raf) return;
-  if (cur) { cur = null; redraw(null); }
-  tip.style.display = 'none';
-});
+      }
 
-settle();   // 초기 렌더 (t=0, 분포)
-</script>
-</body>
+      const ease = (s) => (s < 0.5 ? 2 * s * s : 1 - (-2 * s + 2) ** 2 / 2);
+
+      // ── 배경·경계 레이어 ─────────────────────────────────────────────────
+      function tracePoly(geom) {
+        ctx.beginPath();
+        const polys =
+          geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
+        for (const poly of polys)
+          for (const ring of poly) {
+            ring.forEach(([lon, lat], i) => {
+              const [x, y] = proj(lon, lat);
+              i === 0 ? ctx.moveTo(sx(x), sy(y)) : ctx.lineTo(sx(x), sy(y));
+            });
+            ctx.closePath();
+          }
+      }
+      function pathSeoul() {
+        ctx.beginPath();
+        for (const f of GU.features) {
+          const polys =
+            f.geometry.type === "Polygon"
+              ? [f.geometry.coordinates]
+              : f.geometry.coordinates;
+          for (const poly of polys) {
+            poly[0].forEach(([lon, lat], i) => {
+              const [x, y] = proj(lon, lat);
+              i === 0 ? ctx.moveTo(sx(x), sy(y)) : ctx.lineTo(sx(x), sy(y));
+            });
+            ctx.closePath();
+          }
+        }
+      }
+      const SHADE_ALPHA = 0.5; // 한강·산·공원 셰이드 전체 투명도
+      function drawHanFill() {
+        ctx.save();
+        pathSeoul();
+        ctx.clip();
+        ctx.globalAlpha = SHADE_ALPHA;
+        for (const f of HAN.features) {
+          tracePoly(f.geometry);
+          ctx.fillStyle = "#f3e6d4";
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // 산림 셰이드: 오프스크린에 한 번만 렌더(매 프레임 drawImage)
+      const forestCanvas = document.createElement("canvas");
+      forestCanvas.width = cv.width;
+      forestCanvas.height = cv.height;
+      (function renderForest() {
+        const fx = forestCanvas.getContext("2d");
+        fx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        // 서울 경계로 클리핑(경계 밖 숲 잘라냄)
+        fx.beginPath();
+        for (const f of GU.features) {
+          const polys =
+            f.geometry.type === "Polygon"
+              ? [f.geometry.coordinates]
+              : f.geometry.coordinates;
+          for (const poly of polys) {
+            poly[0].forEach(([lon, lat], i) => {
+              const [x, y] = proj(lon, lat);
+              i === 0 ? fx.moveTo(sx(x), sy(y)) : fx.lineTo(sx(x), sy(y));
+            });
+            fx.closePath();
+          }
+        }
+        fx.clip();
+        // 해칭 패턴 타일 (대각선 빗금) — 산림 채움용
+        const TS = 6; // 타일 한 변(user/ CSS px)
+        const tile = document.createElement("canvas");
+        tile.width = tile.height = TS;
+        const tx = tile.getContext("2d");
+        tx.strokeStyle = "rgba(178,130,58,0.85)"; // 채도 있는 황토/세피아, 얇게
+        tx.lineWidth = 0.6;
+        tx.beginPath();
+        tx.moveTo(-1, TS + 1);
+        tx.lineTo(TS + 1, -1); // 좌하→우상 대각선, 타일 경계서 이어짐
+        tx.stroke();
+        const hatchPattern = fx.createPattern(tile, "repeat");
+
+        function polyPath(p) {
+          const path = new Path2D();
+          p.o.forEach(([lon, lat], i) => {
+            const [x, y] = proj(lon, lat);
+            i === 0 ? path.moveTo(sx(x), sy(y)) : path.lineTo(sx(x), sy(y));
+          });
+          path.closePath();
+          for (const hole of p.i) {
+            // 구멍(숲·공원 안 공터)
+            hole.forEach(([lon, lat], i) => {
+              const [x, y] = proj(lon, lat);
+              i === 0 ? path.moveTo(sx(x), sy(y)) : path.lineTo(sx(x), sy(y));
+            });
+            path.closePath();
+          }
+          return path;
+        }
+        // 공원: 한강과 같은 웜톤 면
+        for (const p of FOREST) {
+          if (p.k === "forest") continue;
+          fx.fillStyle = "#f3e6d4";
+          fx.fill(polyPath(p), "evenodd");
+        }
+        // 산림: 면 대신 대각선 해칭 패턴으로 채움
+        fx.fillStyle = hatchPattern;
+        for (const p of FOREST) {
+          if (p.k !== "forest") continue;
+          fx.fill(polyPath(p), "evenodd");
+        }
+      })();
+      function drawForestShade() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = SHADE_ALPHA;
+        ctx.drawImage(forestCanvas, 0, 0);
+        ctx.globalAlpha = 1;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      function drawBoundaries() {
+        // 구 경계 (한강 내부 제외 — 인버스 클리핑), 케이싱
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, cssW, cssH);
+        for (const f of HAN.features) {
+          for (const ring of f.geometry.coordinates) {
+            ring.forEach(([lon, lat], i) => {
+              const [x, y] = proj(lon, lat);
+              i === 0 ? ctx.moveTo(sx(x), sy(y)) : ctx.lineTo(sx(x), sy(y));
+            });
+            ctx.closePath();
+          }
+        }
+        ctx.clip("evenodd");
+        ctx.strokeStyle = "#fef7f0";
+        ctx.lineWidth = 2.6;
+        for (const f of GU.features) {
+          tracePoly(f.geometry);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = "#3a3026";
+        ctx.lineWidth = 1.1;
+        for (const f of GU.features) {
+          tracePoly(f.geometry);
+          ctx.stroke();
+        }
+        ctx.restore();
+        // 한강 윤곽 케이싱
+        ctx.save();
+        pathSeoul();
+        ctx.clip();
+        for (const f of HAN.features) {
+          tracePoly(f.geometry);
+        }
+        ctx.strokeStyle = "#fef7f0";
+        ctx.lineWidth = 2.6;
+        ctx.stroke();
+        ctx.strokeStyle = "#3a3026";
+        ctx.lineWidth = 1.1;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // ── 장면 그리기 (t: 0=분포, 1=득표차) ────────────────────────────────
+      const TAU = Math.PI * 2;
+      let minorOnly = false; // '소수정당만' 체크 (분포 모드 전용)
+      function drawScene(t) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, cssW, cssH);
+        drawHanFill();
+        drawForestShade();
+
+
+        // 소수정당만 보기: 양당 점 숨기고 1점=10표 밀도로 표시
+        if (minorOnly && t < 0.001) {
+          const RM = 1.4;
+          const mp = [new Path2D(), new Path2D(), new Path2D()];
+          for (const [x, y, c] of minorDots10) {
+            mp[c].moveTo(x + RM, y);
+            mp[c].arc(x, y, RM, 0, TAU);
+          }
+          ctx.globalAlpha = 0.95;
+          for (let c = 0; c < 3; c++) {
+            ctx.fillStyle = COLOR_MINOR[c];
+            ctx.fill(mp[c]);
+          }
+          ctx.globalAlpha = 1;
+          drawBoundaries();
+          return;
+        }
+
+        const pathW = new Path2D(),
+          pathO = new Path2D();
+        const fading = []; // 페이드 중인 점만 개별 알파로
+
+        for (const p of pairs) {
+          const s = (t - p.d0) / p.dur;
+          if (s <= 0) {
+            pathW.moveTo(p.ax + R0, p.ay);
+            pathW.arc(p.ax, p.ay, R0, 0, TAU);
+            pathO.moveTo(p.bx + R0, p.by);
+            pathO.arc(p.bx, p.by, R0, 0, TAU);
+          } else if (s < 1) {
+            const e = ease(Math.min(s / 0.8, 1));
+            let ax = p.ax + (p.mx - p.ax) * e,
+              ay = p.ay + (p.my - p.ay) * e;
+            let bx = p.bx + (p.mx - p.bx) * e,
+              by = p.by + (p.my - p.by) * e;
+            if (s > 0.55) {
+              // 부딪히며 떨림
+              const sh = Math.sin(s * 55) * 1.3 * (1 - s);
+              ax += p.ux * sh;
+              ay += p.uy * sh;
+              bx -= p.ux * sh;
+              by -= p.uy * sh;
+            }
+            const alpha = s < 0.72 ? 0.95 : 0.95 * (1 - (s - 0.72) / 0.28);
+            const r = R0 * (1 + 0.45 * Math.sin(Math.min(s, 1) * Math.PI));
+            if (alpha >= 0.94) {
+              pathW.moveTo(ax + r, ay);
+              pathW.arc(ax, ay, r, 0, TAU);
+              pathO.moveTo(bx + r, by);
+              pathO.arc(bx, by, r, 0, TAU);
+            } else {
+              fading.push([ax, ay, r, 0, alpha], [bx, by, r, 1, alpha]);
+            }
+          }
+        }
+        for (const v of survivors) {
+          const u = Math.max(0, Math.min(1, (t - v.d0) / v.dur));
+          const e = ease(u);
+          const x = v.x0 + (v.x1 - v.x0) * e,
+            y = v.y0 + (v.y1 - v.y0) * e;
+          const r = R0 + (R1 - R0) * e;
+          if (v.c === 0) {
+            pathW.moveTo(x + r, y);
+            pathW.arc(x, y, r, 0, TAU);
+          } else {
+            pathO.moveTo(x + r, y);
+            pathO.arc(x, y, r, 0, TAU);
+          }
+        }
+
+        ctx.globalAlpha = 0.95;
+        ctx.fillStyle = COLOR_WON;
+        ctx.fill(pathW);
+        ctx.fillStyle = COLOR_OH;
+        ctx.fill(pathO);
+        for (const [x, y, r, c, a] of fading) {
+          ctx.globalAlpha = a;
+          ctx.fillStyle = c === 0 ? COLOR_WON : COLOR_OH;
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, TAU);
+          ctx.fill();
+        }
+
+        // 소수정당 점: 분포(t=0)에만, 득표차로 가며 페이드아웃 (t≥0.5면 소멸)
+        const minorAlpha = Math.max(0, 1 - t / 0.5);
+        if (minorAlpha > 0.01) {
+          const RM = R0; // 양당 점과 동일 크기 (과대표시 안 함)
+          const mp = [new Path2D(), new Path2D(), new Path2D()];
+          for (const [x, y, c] of minorDots) {
+            mp[c].moveTo(x + RM, y);
+            mp[c].arc(x, y, RM, 0, TAU);
+          }
+          ctx.globalAlpha = minorAlpha;
+          for (let c = 0; c < 3; c++) {
+            ctx.fillStyle = COLOR_MINOR[c];
+            ctx.fill(mp[c]);
+          }
+        }
+        ctx.globalAlpha = 1;
+
+        drawBoundaries();
+      }
+
+      // ── 득표율 코로플레스 레이어 ─────────────────────────────────────────
+      // 발산 램프 (기사 카토그램과 동일): 오세훈 우세 → 빨강, 정원오 우세 → 파랑
+      const RAMP = ["#d8503f", "#f4988a", "#fbeede", "#8ec2ee", "#4a8fd6"];
+      const CLAMP_PP = 30; // ±30%p에서 색 포화
+      function hex2rgb(h) {
+        return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+      }
+      const RAMP_RGB = RAMP.map(hex2rgb);
+      function rampColor(u) {
+        // u: 0(빨강 끝) ~ 1(파랑 끝)
+        const x = Math.max(0, Math.min(1, u)) * (RAMP_RGB.length - 1);
+        const i = Math.min(Math.floor(x), RAMP_RGB.length - 2);
+        const f = x - i;
+        const c = RAMP_RGB[i].map((v, k) =>
+          Math.round(v + (RAMP_RGB[i + 1][k] - v) * f),
+        );
+        return `rgb(${c[0]},${c[1]},${c[2]})`;
+      }
+      // 동 폴리곤 path는 한 번만 계산
+      const sharePaths = D.dongs.map((d) => {
+        const path = new Path2D();
+        d.r.forEach(([x, y], i) =>
+          i === 0 ? path.moveTo(sx(x), sy(y)) : path.lineTo(sx(x), sy(y)),
+        );
+        path.closePath();
+        return path;
+      });
+
+      // 5개 정당: 이름·색 (정원오·오세훈·개혁·여성·정의)
+      const PARTIES = [
+        { name: "정원오", color: COLOR_WON },
+        { name: "오세훈", color: COLOR_OH },
+        { name: "개혁신당", color: COLOR_MINOR[0] },
+        { name: "여성의당", color: COLOR_MINOR[1] },
+        { name: "정의당", color: COLOR_MINOR[2] },
+      ];
+      // 동별 정당 득표율(%) + 정당별 최대값(색 스케일용)
+      const v5sum = D.dongs.map(
+        (d) => (d.v5 || [0, 0, 0, 0, 0]).reduce((a, b) => a + b, 0) || 1,
+      );
+      const partyShare = PARTIES.map((_, pi) =>
+        D.dongs.map((d, i) => ((d.v5 ? d.v5[pi] : 0) / v5sum[i]) * 100),
+      );
+      const partyMax = partyShare.map((arr) => Math.max(...arr) || 1);
+
+      const BASE_RGB = [246, 239, 230]; // 옅은 종이톤(0% 끝)
+      function seqColor(pi, u) {
+        // 정당 색으로 향하는 순차 램프
+        const tt = Math.sqrt(Math.max(0, Math.min(1, u))); // 저득표 영역 가시성
+        const c = hex2rgb(PARTIES[pi].color);
+        return `rgb(${BASE_RGB.map((b, k) => Math.round(b + (c[k] - b) * tt)).join(",")})`;
+      }
+
+      // shareMode: 'margin'(양당 득표율차, 기본) 또는 0~4(개별 정당)
+      let shareMode = "margin";
+      function dongShareColor(i) {
+        if (shareMode === "margin") {
+          const d = D.dongs[i];
+          const m = ((d.oh - d.won) / (d.oh + d.won)) * 100;
+          const u =
+            (1 - Math.max(-CLAMP_PP, Math.min(CLAMP_PP, m)) / CLAMP_PP) / 2;
+          return rampColor(u);
+        }
+        return seqColor(
+          shareMode,
+          partyShare[shareMode][i] / partyMax[shareMode],
+        );
+      }
+      function drawShare(alpha) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        for (let i = 0; i < sharePaths.length; i++) {
+          ctx.fillStyle = dongShareColor(i);
+          ctx.fill(sharePaths[i]);
+          ctx.strokeStyle = "rgba(254,247,240,0.7)";
+          ctx.lineWidth = 0.5;
+          ctx.stroke(sharePaths[i]);
+        }
+        // 강은 코로플레스 위에 다시 깔아 마스킹
+        ctx.save();
+        pathSeoul();
+        ctx.clip();
+        for (const f of HAN.features) {
+          tracePoly(f.geometry);
+          ctx.fillStyle = "#f3e6d4";
+          ctx.fill();
+        }
+        ctx.restore();
+        drawBoundaries();
+        ctx.restore();
+      }
+
+      // ── 토글 + 애니메이션 ────────────────────────────────────────────────
+      let t = 0,
+        target = 0,
+        raf = null,
+        lastTs = 0;
+      let shareA = 0,
+        shareTarget = 0;
+      const SHARE_MS = 500;
+      const base = document.createElement("canvas");
+      base.width = cv.width;
+      base.height = cv.height;
+      const gapText = document.getElementById("gapText");
+      const legendMinor = document.getElementById("legendMinor");
+      const minorOnlyCb = document.getElementById("minorOnly");
+      const minorUnit = document.getElementById("minorUnit");
+      const shareSel = document.getElementById("shareSel");
+      shareSel.addEventListener("click", (ev) => {
+        const btn = ev.target.closest("button");
+        if (!btn) return;
+        for (const b of shareSel.querySelectorAll("button"))
+          b.classList.toggle("on", b === btn);
+        const p = btn.dataset.party;
+        shareMode = p === "margin" ? "margin" : +p;
+        hideTip();
+        if (shareA >= 1 && !raf) {
+          drawFrame();
+          snapshotBase();
+          updateGap();
+        }
+      });
+      minorOnlyCb.addEventListener("change", () => {
+        minorOnly = minorOnlyCb.checked;
+        minorUnit.textContent = minorOnly ? "· 한 점 = 10표" : "";
+        hideTip();
+        if (!raf) {
+          drawFrame();
+          snapshotBase();
+          updateGap();
+        }
+      });
+      function updateGap() {
+        if (shareA === 1) {
+          if (shareMode === "margin") {
+            gapText.textContent =
+              "동별 득표율차 · 빨강 = 오세훈 우세, 파랑 = 정원오 우세 (±30%p)";
+          } else {
+            gapText.textContent = `${PARTIES[shareMode].name} 동별 득표율 · 색이 진할수록 높음 (최고 ${partyMax[shareMode].toFixed(1)}%)`;
+          }
+          return;
+        }
+        gapText.textContent = minorOnly
+          ? "소수정당만 · 한 점 = 10표"
+          : t === 1
+            ? "상쇄 후 남은 격차만 표시 · 한 점 = 100표"
+            : "동 안에서 왼쪽 정원오·오른쪽 오세훈, 경계 = 득표 비율";
+      }
+
+      function snapshotBase() {
+        base.getContext("2d").clearRect(0, 0, base.width, base.height);
+        base.getContext("2d").drawImage(cv, 0, 0);
+      }
+      function drawFrame() {
+        if (shareA >= 1) {
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, cssW, cssH);
+          drawShare(1);
+        } else {
+          drawScene(t);
+          if (shareA > 0) drawShare(shareA);
+        }
+      }
+      function settle() {
+        drawFrame();
+        snapshotBase();
+        updateGap();
+      }
+      function step(ts) {
+        if (!lastTs) lastTs = ts;
+        const dtMs = ts - lastTs;
+        lastTs = ts;
+        if (t !== target) {
+          t += (Math.sign(target - t) * dtMs) / TOTAL_MS;
+          if (t < 0) t = 0;
+          if (t > 1) t = 1;
+          if (Math.abs(t - target) < 1e-4) t = target;
+        }
+        if (shareA !== shareTarget) {
+          shareA += (Math.sign(shareTarget - shareA) * dtMs) / SHARE_MS;
+          if (shareA < 0) shareA = 0;
+          if (shareA > 1) shareA = 1;
+          if (Math.abs(shareA - shareTarget) < 1e-3) shareA = shareTarget;
+        }
+        if (t === target && shareA === shareTarget) {
+          raf = null;
+          settle();
+          return;
+        }
+        drawFrame();
+        raf = requestAnimationFrame(step);
+      }
+      document.getElementById("seg").addEventListener("click", (ev) => {
+        const btn = ev.target.closest("button");
+        if (!btn) return;
+        for (const b of document.querySelectorAll("#seg button"))
+          b.classList.toggle("on", b === btn);
+        const mode = btn.dataset.mode;
+        if (mode === "share") {
+          shareTarget = 1;
+        } // 점 상태 유지한 채 페이드인
+        else {
+          shareTarget = 0;
+          target = mode === "margin" ? 1 : 0;
+        }
+        // 소수정당 범례·체크박스는 분포 모드에서만
+        if (mode !== "dist" && minorOnly) {
+          minorOnlyCb.checked = false;
+          minorOnly = false;
+          minorUnit.textContent = "";
+        }
+        legendMinor.style.opacity = mode === "dist" ? "1" : "0";
+        legendMinor.style.pointerEvents = mode === "dist" ? "auto" : "none";
+        shareSel.classList.toggle("show", mode === "share"); // 정당 선택은 득표율 모드만
+        hideTip();
+        if (!raf) {
+          lastTs = 0;
+          raf = requestAnimationFrame(step);
+        }
+      });
+
+      // ── 호버: 동 영역 정보 툴팁 + 하이라이트 (애니메이션 중엔 비활성) ──────
+      for (const d of D.dongs) {
+        let a = Infinity,
+          b = Infinity,
+          c = -Infinity,
+          e = -Infinity;
+        for (const [x, y] of d.r) {
+          if (x < a) a = x;
+          if (x > c) c = x;
+          if (y < b) b = y;
+          if (y > e) e = y;
+        }
+        d.bbox = [a, b, c, e];
+      }
+      function inRing(px, py, ring) {
+        let inside = false;
+        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+          const [xi, yi] = ring[i],
+            [xj, yj] = ring[j];
+          if (
+            yi > py !== yj > py &&
+            px < ((xj - xi) * (py - yi)) / (yj - yi) + xi
+          )
+            inside = !inside;
+        }
+        return inside;
+      }
+      const tip = document.getElementById("tip");
+      const fmt = (n) => n.toLocaleString("ko-KR");
+      let cur = null;
+      function hideTip() {
+        cur = null;
+        tip.style.display = "none";
+      }
+      function redraw(hl) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        ctx.drawImage(base, 0, 0);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (hl) {
+          ctx.beginPath();
+          hl.r.forEach(([x, y], i) =>
+            i === 0 ? ctx.moveTo(sx(x), sy(y)) : ctx.lineTo(sx(x), sy(y)),
+          );
+          ctx.closePath();
+          ctx.strokeStyle = "#1a1a1a";
+          ctx.lineWidth = 1.4;
+          ctx.stroke();
+        }
+      }
+      cv.addEventListener("mousemove", (ev) => {
+        if (raf) return; // 애니메이션 중 비활성
+        const rect = cv.getBoundingClientRect();
+        const ratio = rect.width / cssW;
+        const mx = (ev.clientX - rect.left) / ratio;
+        const my = (ev.clientY - rect.top) / ratio;
+        const px = (mx - PAD) / scale + minX;
+        const py = (cssH - PAD - my) / scale + minY;
+
+        let hit = null;
+        for (const d of D.dongs) {
+          const [a, b, c, e] = d.bbox;
+          if (px < a || px > c || py < b || py > e) continue;
+          if (inRing(px, py, d.r)) {
+            hit = d;
+            break;
+          }
+        }
+        if (hit !== cur) {
+          cur = hit;
+          redraw(hit);
+          if (hit) {
+            const tot = hit.won + hit.oh;
+            const diff = hit.oh - hit.won;
+            const leader = diff > 0 ? "오세훈" : "정원오";
+            const lColor = diff > 0 ? COLOR_OH : COLOR_WON;
+            const pctGap = ((Math.abs(diff) / tot) * 100).toFixed(1);
+            const mark = (c) =>
+              (c === "won") === diff < 0
+                ? ` <b style="color:${lColor}">+${pctGap}%p</b>`
+                : "";
+            const mv = hit.mv || [0, 0, 0];
+            const minorRows = mv
+              .map((v, c) =>
+                v > 0
+                  ? `<div class="row minor"><span><span class="sw" style="background:${COLOR_MINOR[c]}"></span>${MINOR_NAMES[c]}</span><b>${fmt(v)}</b></div>`
+                  : "",
+              )
+              .join("");
+            tip.innerHTML =
+              `<div class="tn">${hit.n} <span class="tg">${hit.g}</span></div>` +
+              `<div class="row"><span><span class="sw" style="background:${COLOR_WON}"></span>정원오${mark("won")}</span><b>${fmt(hit.won)} (${((hit.won / tot) * 100).toFixed(1)}%)</b></div>` +
+              `<div class="row"><span><span class="sw" style="background:${COLOR_OH}"></span>오세훈${mark("oh")}</span><b>${fmt(hit.oh)} (${((hit.oh / tot) * 100).toFixed(1)}%)</b></div>` +
+              minorRows +
+              `<div class="diff">정원오·오세훈은 양자 기준(관외 배분), 소수정당은 동 집계</div>`;
+            tip.style.display = "block";
+          } else {
+            tip.style.display = "none";
+          }
+        }
+        if (hit) {
+          const wrapRect = document
+            .getElementById("wrap")
+            .getBoundingClientRect();
+          let tx = ev.clientX - wrapRect.left + 14;
+          let ty = ev.clientY - wrapRect.top + 14;
+          if (tx + tip.offsetWidth > wrapRect.width - 4)
+            tx -= tip.offsetWidth + 26;
+          tip.style.left = tx + "px";
+          tip.style.top = ty + "px";
+        }
+      });
+      cv.addEventListener("mouseleave", () => {
+        if (raf) return;
+        if (cur) {
+          cur = null;
+          redraw(null);
+        }
+        tip.style.display = "none";
+      });
+
+      settle(); // 초기 렌더 (t=0, 분포)
+    </script>
+  </body>
 </html>
