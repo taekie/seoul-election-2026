@@ -231,24 +231,47 @@ forestCanvas.width = cv.width; forestCanvas.height = cv.height;
     }
   }
   fx.clip();
-  // 산림은 살짝 초록기, 공원은 한강과 같은 웜톤 — 미세하게만 구분
-  const SHADE = { forest: '#e7e3cb', park: '#f3e6d4' };
-  for (const p of FOREST) {
+  const HATCH_GAP = 4.5, HATCH_W = 0.8, HATCH_COLOR = 'rgba(108,92,68,0.55)';
+  function polyPath(p) {
     const path = new Path2D();
     p.o.forEach(([lon, lat], i) => {
       const [x, y] = proj(lon, lat);
       i === 0 ? path.moveTo(sx(x), sy(y)) : path.lineTo(sx(x), sy(y));
     });
     path.closePath();
-    for (const hole of p.i) {           // 구멍(숲 안 공터)
+    for (const hole of p.i) {           // 구멍(숲·공원 안 공터)
       hole.forEach(([lon, lat], i) => {
         const [x, y] = proj(lon, lat);
         i === 0 ? path.moveTo(sx(x), sy(y)) : path.lineTo(sx(x), sy(y));
       });
       path.closePath();
     }
-    fx.fillStyle = SHADE[p.k] || SHADE.park;
-    fx.fill(path, 'evenodd');
+    return path;
+  }
+  // 공원: 한강과 같은 웜톤 면
+  for (const p of FOREST) {
+    if (p.k === 'forest') continue;
+    fx.fillStyle = '#f3e6d4';
+    fx.fill(polyPath(p), 'evenodd');
+  }
+  // 산림: 면 대신 대각선 해칭 (종이톤 위 웜그레이 빗금)
+  fx.strokeStyle = HATCH_COLOR;
+  fx.lineWidth = HATCH_W;
+  for (const p of FOREST) {
+    if (p.k !== 'forest') continue;
+    const b = p.b;
+    const [x0, y0] = [sx(b[0]), sy(b[3])];   // 좌상
+    const [x1, y1] = [sx(b[2]), sy(b[1])];   // 우하
+    fx.save();
+    fx.clip(polyPath(p), 'evenodd');
+    const h = y1 - y0;
+    for (let x = x0 - h; x <= x1; x += HATCH_GAP) {
+      fx.beginPath();
+      fx.moveTo(x, y0);
+      fx.lineTo(x + h, y1);                   // 45° 빗금
+      fx.stroke();
+    }
+    fx.restore();
   }
 })();
 function drawForestShade() {
