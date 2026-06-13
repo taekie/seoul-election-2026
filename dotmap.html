@@ -231,7 +231,8 @@ forestCanvas.width = cv.width; forestCanvas.height = cv.height;
     }
   }
   fx.clip();
-  fx.fillStyle = '#f3e6d4';   // 한강과 동일 톤
+  // 산림은 살짝 초록기, 공원은 한강과 같은 웜톤 — 미세하게만 구분
+  const SHADE = { forest: '#e7e3cb', park: '#f3e6d4' };
   for (const p of FOREST) {
     const path = new Path2D();
     p.o.forEach(([lon, lat], i) => {
@@ -246,6 +247,7 @@ forestCanvas.width = cv.width; forestCanvas.height = cv.height;
       });
       path.closePath();
     }
+    fx.fillStyle = SHADE[p.k] || SHADE.park;
     fx.fill(path, 'evenodd');
   }
 })();
