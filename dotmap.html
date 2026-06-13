@@ -46,6 +46,9 @@
   .legend-minor { margin-top: 7px; font-size: 11.5px; color: var(--muted); transition: opacity .3s; }
   .legend-minor .dot { width: 7px; height: 7px; }
   .legend-minor b { color: var(--ink); font-weight: 600; }
+  .monly { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; color: var(--ink); }
+  .monly input { accent-color: #9b3fb5; cursor: pointer; margin: 0; }
+  .monly .u { color: var(--muted); font-size: 10.5px; }
   #wrap { width: 100%; max-width: 1000px; margin-top: 10px; position: relative; }
   canvas { width: 100%; height: auto; display: block; }
   #tip {
@@ -82,6 +85,7 @@
     </div>
   </div>
   <div class="legend legend-minor" id="legendMinor">
+    <label class="monly"><input type="checkbox" id="minorOnly"> 소수정당만 <span class="u" id="minorUnit"></span></label>
     <div class="item"><span class="dot" style="background:#ff7a18"></span>개혁신당 <b>36,279</b></div>
     <div class="item"><span class="dot" style="background:#9b3fb5"></span>여성의당 <b>37,719</b></div>
     <div class="item"><span class="dot" style="background:#f2b705"></span>정의당 <b>45,561</b></div>
@@ -142,11 +146,14 @@ const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
 // survivors: 매칭 안 된 승자 점 — 균등 배치 좌표(d.m)로 이동하며 커짐
 const pairs = [];      // {ax,ay,bx,by,mx,my,ux,uy,d0,dur}  a=won, b=oh
 const survivors = [];  // {x0,y0,x1,y1,c,d0,dur}
-const minorDots = [];  // [x, y, partyIdx] — 분포 모드에만, 득표차에선 페이드아웃
+const minorDots = [];    // [x, y, partyIdx] — 분포 오버레이(1점=100표)
+const minorDots10 = [];  // [x, y, partyIdx] — 소수정당만(1점=10표)
 
 for (const d of D.dongs) {
   for (const [mx, my, c] of (d.mp || []))
     minorDots.push([sx(mx), sy(my), c]);
+  for (const [mx, my, c] of (d.mp10 || []))
+    minorDots10.push([sx(mx), sy(my), c]);
   const W = d.w.map(p => [sx(p[0]), sy(p[1])]);
   const O = d.o.map(p => [sx(p[0]), sy(p[1])]);
   const wonIsMajor = W.length >= O.length;
@@ -329,11 +336,24 @@ function drawBoundaries() {
 
 // ── 장면 그리기 (t: 0=분포, 1=득표차) ────────────────────────────────
 const TAU = Math.PI * 2;
+let minorOnly = false;   // '소수정당만' 체크 (분포 모드 전용)
 function drawScene(t) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, cssH);
   drawHanFill();
   drawForestShade();
+
+  // 소수정당만 보기: 양당 점 숨기고 1점=10표 밀도로 표시
+  if (minorOnly && t < 0.001) {
+    const RM = 1.4;
+    const mp = [new Path2D(), new Path2D(), new Path2D()];
+    for (const [x, y, c] of minorDots10) { mp[c].moveTo(x + RM, y); mp[c].arc(x, y, RM, 0, TAU); }
+    ctx.globalAlpha = 0.95;
+    for (let c = 0; c < 3; c++) { ctx.fillStyle = COLOR_MINOR[c]; ctx.fill(mp[c]); }
+    ctx.globalAlpha = 1;
+    drawBoundaries();
+    return;
+  }
 
   const pathW = new Path2D(), pathO = new Path2D();
   const fading = [];   // 페이드 중인 점만 개별 알파로
@@ -444,6 +464,23 @@ const base = document.createElement('canvas');
 base.width = cv.width; base.height = cv.height;
 const gapText = document.getElementById('gapText');
 const legendMinor = document.getElementById('legendMinor');
+const minorOnlyCb = document.getElementById('minorOnly');
+const minorUnit = document.getElementById('minorUnit');
+minorOnlyCb.addEventListener('change', () => {
+  minorOnly = minorOnlyCb.checked;
+  minorUnit.textContent = minorOnly ? '· 한 점 = 10표' : '';
+  hideTip();
+  if (!raf) { drawFrame(); snapshotBase(); updateGap(); }
+});
+function updateGap() {
+  gapText.textContent = shareA === 1
+    ? '동별 득표율차 · 빨강 = 오세훈 우세, 파랑 = 정원오 우세 (±30%p)'
+    : minorOnly
+      ? '소수정당만 · 한 점 = 10표'
+      : t === 1
+        ? '상쇄 후 남은 격차만 표시 · 한 점 = 100표'
+        : '격차 60,259표 (점 602개 차이)';
+}
 
 function snapshotBase() {
   base.getContext('2d').clearRect(0, 0, base.width, base.height);
@@ -462,11 +499,7 @@ function drawFrame() {
 function settle() {
   drawFrame();
   snapshotBase();
-  gapText.textContent = shareA === 1
-    ? '동별 득표율차 · 빨강 = 오세훈 우세, 파랑 = 정원오 우세 (±30%p)'
-    : t === 1
-      ? '상쇄 후 남은 격차만 표시 · 한 점 = 100표'
-      : '격차 60,259표 (점 602개 차이)';
+  updateGap();
 }
 function step(ts) {
   if (!lastTs) lastTs = ts;
@@ -495,8 +528,12 @@ document.getElementById('seg').addEventListener('click', ev => {
   const mode = btn.dataset.mode;
   if (mode === 'share') { shareTarget = 1; }            // 점 상태는 유지한 채 페이드인
   else { shareTarget = 0; target = mode === 'margin' ? 1 : 0; }
-  // 소수정당 범례는 분포 모드에서만 (득표차·득표율선 의미 없음)
+  // 소수정당 범례·체크박스는 분포 모드에서만
+  if (mode !== 'dist' && minorOnly) {
+    minorOnlyCb.checked = false; minorOnly = false; minorUnit.textContent = '';
+  }
   legendMinor.style.opacity = mode === 'dist' ? '1' : '0';
+  legendMinor.style.pointerEvents = mode === 'dist' ? 'auto' : 'none';
   hideTip();
   if (!raf) { lastTs = 0; raf = requestAnimationFrame(step); }
 });
