@@ -43,6 +43,9 @@
   .legend .dot { width: 9px; height: 9px; border-radius: 50%; }
   .legend b { font-variant-numeric: tabular-nums; }
   .gap { color: var(--muted); font-size: 12px; }
+  .legend-minor { margin-top: 7px; font-size: 11.5px; color: var(--muted); transition: opacity .3s; }
+  .legend-minor .dot { width: 7px; height: 7px; }
+  .legend-minor b { color: var(--ink); font-weight: 600; }
   #wrap { width: 100%; max-width: 1000px; margin-top: 10px; position: relative; }
   canvas { width: 100%; height: auto; display: block; }
   #tip {
@@ -56,6 +59,8 @@
   #tip .row { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
   #tip .sw { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
   #tip .diff { margin-top: 3px; padding-top: 3px; border-top: 1px solid #f0e6d8; color: var(--muted); font-size: 11px; }
+  #tip .row.minor { font-size: 11px; color: var(--muted); }
+  #tip .row.minor b { color: #4a4540; font-weight: 600; }
   .note { font-size: 11px; color: #8a8178; margin-top: 8px; text-align: center; }
   .note a { color: #8a8178; text-decoration: none; border-bottom: 1px solid #d9cbb8; }
   .note a:hover { color: var(--ink); }
@@ -76,6 +81,11 @@
       <div class="gap" id="gapText">격차 60,259표 (점 602개 차이)</div>
     </div>
   </div>
+  <div class="legend legend-minor" id="legendMinor">
+    <div class="item"><span class="dot" style="background:#ff7a18"></span>개혁신당 <b>36,279</b></div>
+    <div class="item"><span class="dot" style="background:#9b3fb5"></span>여성의당 <b>37,719</b></div>
+    <div class="item"><span class="dot" style="background:#f2b705"></span>정의당 <b>45,561</b></div>
+  </div>
   <div id="wrap"><canvas id="cv"></canvas><div id="tip"></div></div>
   <div class="note">점 위치는 동 단위 무작위 배치(산림·대형공원 제외: OSM)로, 실제 거주지를 나타내지 않음 · 자료: 중앙선거관리위원회 · <a href="https://x.com/taekie" target="_blank" rel="noopener">無異</a></div>
 
@@ -89,6 +99,9 @@ const GU = window.SEOUL_GEO;
 const HAN = window.HAN;
 const FOREST = window.FOREST || [];
 const COLOR_WON = '#2e6fc9', COLOR_OH = '#e0301e';
+// 소수정당: 개혁신당(주황)·여성의당(보라)·정의당(노랑)
+const COLOR_MINOR = ['#ff7a18', '#9b3fb5', '#f2b705'];
+const MINOR_NAMES = ['개혁신당', '여성의당', '정의당'];
 const R0 = 1.05, R1 = 2.0;          // 분포 점 / 득표차 점 반지름
 const TOTAL_MS = 4800;              // 토글 애니메이션 전체 길이
 
@@ -129,8 +142,11 @@ const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
 // survivors: 매칭 안 된 승자 점 — 균등 배치 좌표(d.m)로 이동하며 커짐
 const pairs = [];      // {ax,ay,bx,by,mx,my,ux,uy,d0,dur}  a=won, b=oh
 const survivors = [];  // {x0,y0,x1,y1,c,d0,dur}
+const minorDots = [];  // [x, y, partyIdx] — 분포 모드에만, 득표차에선 페이드아웃
 
 for (const d of D.dongs) {
+  for (const [mx, my, c] of (d.mp || []))
+    minorDots.push([sx(mx), sy(my), c]);
   const W = d.w.map(p => [sx(p[0]), sy(p[1])]);
   const O = d.o.map(p => [sx(p[0]), sy(p[1])]);
   const wonIsMajor = W.length >= O.length;
@@ -363,6 +379,16 @@ function drawScene(t) {
     ctx.fillStyle = c === 0 ? COLOR_WON : COLOR_OH;
     ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
   }
+
+  // 소수정당 점: 분포(t=0)에만, 득표차로 가며 페이드아웃 (t≥0.5면 소멸)
+  const minorAlpha = Math.max(0, 1 - t / 0.5);
+  if (minorAlpha > 0.01) {
+    const RM = 1.7;
+    const mp = [new Path2D(), new Path2D(), new Path2D()];
+    for (const [x, y, c] of minorDots) { mp[c].moveTo(x + RM, y); mp[c].arc(x, y, RM, 0, TAU); }
+    ctx.globalAlpha = minorAlpha;
+    for (let c = 0; c < 3; c++) { ctx.fillStyle = COLOR_MINOR[c]; ctx.fill(mp[c]); }
+  }
   ctx.globalAlpha = 1;
 
   drawBoundaries();
@@ -417,6 +443,7 @@ const SHARE_MS = 500;
 const base = document.createElement('canvas');
 base.width = cv.width; base.height = cv.height;
 const gapText = document.getElementById('gapText');
+const legendMinor = document.getElementById('legendMinor');
 
 function snapshotBase() {
   base.getContext('2d').clearRect(0, 0, base.width, base.height);
@@ -468,6 +495,8 @@ document.getElementById('seg').addEventListener('click', ev => {
   const mode = btn.dataset.mode;
   if (mode === 'share') { shareTarget = 1; }            // 점 상태는 유지한 채 페이드인
   else { shareTarget = 0; target = mode === 'margin' ? 1 : 0; }
+  // 소수정당 범례는 분포 모드에서만 (득표차·득표율선 의미 없음)
+  legendMinor.style.opacity = mode === 'dist' ? '1' : '0';
   hideTip();
   if (!raf) { lastTs = 0; raf = requestAnimationFrame(step); }
 });
@@ -538,11 +567,16 @@ cv.addEventListener('mousemove', ev => {
       const pctGap = (Math.abs(diff) / tot * 100).toFixed(1);
       const mark = c => (c === 'won') === (diff < 0)
         ? ` <b style="color:${lColor}">+${pctGap}%p</b>` : '';
+      const mv = hit.mv || [0, 0, 0];
+      const minorRows = mv.map((v, c) => v > 0
+        ? `<div class="row minor"><span><span class="sw" style="background:${COLOR_MINOR[c]}"></span>${MINOR_NAMES[c]}</span><b>${fmt(v)}</b></div>`
+        : '').join('');
       tip.innerHTML =
         `<div class="tn">${hit.n} <span class="tg">${hit.g}</span></div>` +
         `<div class="row"><span><span class="sw" style="background:${COLOR_WON}"></span>정원오${mark('won')}</span><b>${fmt(hit.won)} (${(hit.won / tot * 100).toFixed(1)}%)</b></div>` +
         `<div class="row"><span><span class="sw" style="background:${COLOR_OH}"></span>오세훈${mark('oh')}</span><b>${fmt(hit.oh)} (${(hit.oh / tot * 100).toFixed(1)}%)</b></div>` +
-        `<div class="diff">양자 기준 · 관외 배분 추정</div>`;
+        minorRows +
+        `<div class="diff">정원오·오세훈은 양자 기준(관외 배분), 소수정당은 동 집계</div>`;
       tip.style.display = 'block';
     } else {
       tip.style.display = 'none';
