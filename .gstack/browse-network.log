@@ -1,0 +1,4 @@
+[2026-06-13T01:18:15.962Z] GET https://taekie.github.io/seoul-election-2026/dotmap.html → pending (?ms, ?B)
+[2026-06-13T01:18:16.222Z] GET https://taekie.github.io/seoul-election-2026/data-dotmap.js → 200 (270ms, 1173071B)
+[2026-06-13T01:18:16.222Z] GET https://taekie.github.io/seoul-election-2026/seoul_gu.js → 200 (195ms, 32566B)
+[2026-06-13T01:18:16.222Z] GET https://taekie.github.io/seoul-election-2026/data-han.js → 200 (194ms, 4587B)
