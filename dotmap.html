@@ -47,7 +47,7 @@
   .legend-minor .dot { width: 7px; height: 7px; }
   .legend-minor b { color: var(--ink); font-weight: 600; }
   .monly { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; color: var(--ink); }
-  .monly input { accent-color: #9b3fb5; cursor: pointer; margin: 0; }
+  .monly input { accent-color: #5f574f; cursor: pointer; margin: 0; }
   .monly .u { color: var(--muted); font-size: 10.5px; }
   #wrap { width: 100%; max-width: 1000px; margin-top: 10px; position: relative; }
   canvas { width: 100%; height: auto; display: block; }
@@ -86,7 +86,7 @@
   </div>
   <div class="legend legend-minor" id="legendMinor">
     <label class="monly"><input type="checkbox" id="minorOnly"> 소수정당만 <span class="u" id="minorUnit"></span></label>
-    <div class="item"><span class="dot" style="background:#ff7a18"></span>개혁신당 <b>36,279</b></div>
+    <div class="item"><span class="dot" style="background:#f0461a"></span>개혁신당 <b>36,279</b></div>
     <div class="item"><span class="dot" style="background:#9b3fb5"></span>여성의당 <b>37,719</b></div>
     <div class="item"><span class="dot" style="background:#f2b705"></span>정의당 <b>45,561</b></div>
   </div>
@@ -104,7 +104,7 @@ const HAN = window.HAN;
 const FOREST = window.FOREST || [];
 const COLOR_WON = '#2e6fc9', COLOR_OH = '#e0301e';
 // 소수정당: 개혁신당(주황)·여성의당(보라)·정의당(노랑)
-const COLOR_MINOR = ['#ff7a18', '#9b3fb5', '#f2b705'];
+const COLOR_MINOR = ['#f0461a', '#9b3fb5', '#f2b705'];
 const MINOR_NAMES = ['개혁신당', '여성의당', '정의당'];
 const R0 = 1.05, R1 = 2.0;          // 분포 점 / 득표차 점 반지름
 const TOTAL_MS = 4800;              // 토글 애니메이션 전체 길이
