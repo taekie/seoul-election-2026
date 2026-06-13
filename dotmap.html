@@ -82,10 +82,12 @@
 <script src="data-dotmap.js"></script>
 <script src="seoul_gu.js"></script>
 <script src="data-han.js"></script>
+<script src="data-forest.js"></script>
 <script>
 const D = window.DOTMAP;
 const GU = window.SEOUL_GEO;
 const HAN = window.HAN;
+const FOREST = window.FOREST || [];
 const COLOR_WON = '#2e6fc9', COLOR_OH = '#e0301e';
 const R0 = 1.05, R1 = 2.0;          // 분포 점 / 득표차 점 반지름
 const TOTAL_MS = 4800;              // 토글 애니메이션 전체 길이
@@ -209,6 +211,49 @@ function drawHanFill() {
   for (const f of HAN.features) { tracePoly(f.geometry); ctx.fillStyle = '#f3e6d4'; ctx.fill(); }
   ctx.restore();
 }
+
+// 산림 셰이드: 오프스크린에 한 번만 렌더(매 프레임 drawImage)
+const forestCanvas = document.createElement('canvas');
+forestCanvas.width = cv.width; forestCanvas.height = cv.height;
+(function renderForest() {
+  const fx = forestCanvas.getContext('2d');
+  fx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // 서울 경계로 클리핑(경계 밖 숲 잘라냄)
+  fx.beginPath();
+  for (const f of GU.features) {
+    const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+    for (const poly of polys) {
+      poly[0].forEach(([lon, lat], i) => {
+        const [x, y] = proj(lon, lat);
+        i === 0 ? fx.moveTo(sx(x), sy(y)) : fx.lineTo(sx(x), sy(y));
+      });
+      fx.closePath();
+    }
+  }
+  fx.clip();
+  fx.fillStyle = 'rgba(74,96,58,0.13)';   // 옅은 숲 그린
+  for (const p of FOREST) {
+    const path = new Path2D();
+    p.o.forEach(([lon, lat], i) => {
+      const [x, y] = proj(lon, lat);
+      i === 0 ? path.moveTo(sx(x), sy(y)) : path.lineTo(sx(x), sy(y));
+    });
+    path.closePath();
+    for (const hole of p.i) {           // 구멍(숲 안 공터)
+      hole.forEach(([lon, lat], i) => {
+        const [x, y] = proj(lon, lat);
+        i === 0 ? path.moveTo(sx(x), sy(y)) : path.lineTo(sx(x), sy(y));
+      });
+      path.closePath();
+    }
+    fx.fill(path, 'evenodd');
+  }
+})();
+function drawForestShade() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(forestCanvas, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
 function drawBoundaries() {
   // 구 경계 (한강 내부 제외 — 인버스 클리핑), 케이싱
   ctx.save();
@@ -245,6 +290,7 @@ function drawScene(t) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, cssH);
   drawHanFill();
+  drawForestShade();
 
   const pathW = new Path2D(), pathO = new Path2D();
   const fading = [];   // 페이드 중인 점만 개별 알파로
