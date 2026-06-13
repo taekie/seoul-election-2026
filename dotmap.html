@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 서울시장 득표 도트맵</title>
+<style>
+  :root { --bg: #fef7f0; --ink: #1a1a1a; --muted: #66605c; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: 'KoddiUD OnGothic', -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh; padding: 28px 16px;
+  }
+  h1 { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
+  .sub { font-size: 12.5px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .controls { display: flex; gap: 18px; align-items: center; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
+  .seg {
+    display: inline-flex; gap: 2px; padding: 3px;
+    background: #f0e6d8; border: 1px solid #e6d9c9; border-radius: 9px;
+  }
+  .seg button {
+    appearance: none; border: none; background: transparent; cursor: pointer;
+    font-family: inherit; font-size: 12.5px; color: var(--muted);
+    padding: 4px 14px; border-radius: 6px;
+  }
+  .seg button:hover { color: var(--ink); }
+  .seg button.on {
+    background: #fff; color: var(--ink); font-weight: 700;
+    box-shadow: 0 1px 2px rgba(26,26,26,.1), 0 0 0 0.5px rgba(26,26,26,.04);
+  }
+  .legend { display: flex; gap: 22px; align-items: center; font-size: 13px; }
+  .legend .item { display: flex; align-items: center; gap: 7px; }
+  .legend .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .legend b { font-variant-numeric: tabular-nums; }
+  .gap { color: var(--muted); font-size: 12px; }
+  #wrap { width: 100%; max-width: 1000px; margin-top: 10px; position: relative; }
+  canvas { width: 100%; height: auto; display: block; }
+  #tip {
+    position: absolute; pointer-events: none; display: none;
+    background: #fff; border: 1px solid #e6d9c9; border-radius: 6px;
+    padding: 8px 11px; font-size: 12px; line-height: 1.6;
+    box-shadow: 0 2px 10px rgba(26,26,26,.12); white-space: nowrap; z-index: 5;
+  }
+  #tip .tn { font-weight: 700; font-size: 12.5px; margin-bottom: 2px; }
+  #tip .tg { color: var(--muted); font-weight: 400; font-size: 11px; }
+  #tip .row { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
+  #tip .sw { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+  #tip .diff { margin-top: 3px; padding-top: 3px; border-top: 1px solid #f0e6d8; color: var(--muted); font-size: 11px; }
+  .note { font-size: 11px; color: #8a8178; margin-top: 8px; text-align: center; }
+</style>
+</head>
+<body>
+  <h1>2026 서울시장 선거 — 1점=100표</h1>
+  <div class="sub">동별 득표수만큼 동 경계 안에 무작위 배치 (한강 제외, 관외·거소투표는 동별 득표 비율로 배분)</div>
+  <div class="controls">
+    <div class="seg" id="seg">
+      <button class="on" data-mode="dist">분포</button>
+      <button data-mode="margin">득표차</button>
+      <button data-mode="share">득표율</button>
+    </div>
+    <div class="legend">
+      <div class="item"><span class="dot" style="background:#2e6fc9"></span>정원오 <b>2,515,560</b></div>
+      <div class="item"><span class="dot" style="background:#e0301e"></span>오세훈 <b>2,575,819</b></div>
+      <div class="gap" id="gapText">격차 60,259표 (점 602개 차이)</div>
+    </div>
+  </div>
+  <div id="wrap"><canvas id="cv"></canvas><div id="tip"></div></div>
+  <div class="note">점 위치는 동 단위 무작위 배치로, 실제 거주지를 나타내지 않음 · 자료: 중앙선거관리위원회</div>
+
+<script src="data-dotmap.js"></script>
+<script src="seoul_gu.js"></script>
+<script src="data-han.js"></script>
+<script>
+const D = window.DOTMAP;
+const GU = window.SEOUL_GEO;
+const HAN = window.HAN;
+const COLOR_WON = '#2e6fc9', COLOR_OH = '#e0301e';
+const R0 = 1.05, R1 = 2.0;          // 분포 점 / 득표차 점 반지름
+const TOTAL_MS = 4800;              // 토글 애니메이션 전체 길이
+
+// 전처리와 동일한 투영: px=(lon-126.97)*cos(37.56°), py=lat-37.56
+const LON0 = 126.97, LAT0 = 37.56, COS_LAT = Math.cos(37.56 * Math.PI / 180);
+const proj = (lon, lat) => [(lon - LON0) * COS_LAT, lat - LAT0];
+
+// 화면 맞춤: 구 경계 전체 bbox 기준
+let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+for (const f of GU.features) {
+  const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+  for (const poly of polys) for (const [lon, lat] of poly[0]) {
+    const [x, y] = proj(lon, lat);
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+}
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const PAD = 12;
+const cssW = Math.min(1000, document.getElementById('wrap').clientWidth);
+const scale = (cssW - PAD * 2) / (maxX - minX);
+const cssH = Math.ceil((maxY - minY) * scale + PAD * 2);
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+cv.width = cssW * dpr; cv.height = cssH * dpr;
+cv.style.maxWidth = cssW + 'px';
+
+const sx = x => PAD + (x - minX) * scale;
+const sy = y => cssH - PAD - (y - minY) * scale;   // y 뒤집기 (북쪽 위)
+
+// 시드 고정 LCG (리로드해도 같은 연출)
+let seed = 20260613;
+const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+
+// ── 페어(상쇄) + 생존자(득표차) 구성 ─────────────────────────────────
+// pairs: 빨강·파랑 1:1 매칭 — 서로에게 다가가 부딪히고 소멸
+// survivors: 매칭 안 된 승자 점 — 균등 배치 좌표(d.m)로 이동하며 커짐
+const pairs = [];      // {ax,ay,bx,by,mx,my,ux,uy,d0,dur}  a=won, b=oh
+const survivors = [];  // {x0,y0,x1,y1,c,d0,dur}
+
+for (const d of D.dongs) {
+  const W = d.w.map(p => [sx(p[0]), sy(p[1])]);
+  const O = d.o.map(p => [sx(p[0]), sy(p[1])]);
+  const wonIsMajor = W.length >= O.length;
+  const minor = wonIsMajor ? O : W;
+  const major = wonIsMajor ? W : O;
+  const used = new Uint8Array(major.length);
+
+  for (const [px, py] of minor) {
+    let bi = -1, bd = Infinity;
+    for (let i = 0; i < major.length; i++) {
+      if (used[i]) continue;
+      const dx = major[i][0] - px, dy = major[i][1] - py;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bd) { bd = d2; bi = i; }
+    }
+    used[bi] = 1;
+    const [qx, qy] = major[bi];
+    const ax = wonIsMajor ? qx : px, ay = wonIsMajor ? qy : py;
+    const bx = wonIsMajor ? px : qx, by = wonIsMajor ? py : qy;
+    const mx = (ax + bx) / 2, my = (ay + by) / 2;
+    const len = Math.hypot(bx - ax, by - ay) || 1;
+    pairs.push({ ax, ay, bx, by, mx, my,
+      ux: -(by - ay) / len, uy: (bx - ax) / len,   // 수직 방향 (떨림용)
+      d0: rnd() * 0.45, dur: 0.28 });
+  }
+
+  // 생존자: 미매칭 major → d.m(균등 좌표)에 최근접 배정
+  const rest = [];
+  for (let i = 0; i < major.length; i++) if (!used[i]) rest.push(major[i]);
+  const targets = d.m.map(p => [sx(p[0]), sy(p[1])]);
+  const tUsed = new Uint8Array(targets.length);
+  for (const [px, py] of rest) {
+    let bi = -1, bd = Infinity;
+    for (let i = 0; i < targets.length; i++) {
+      if (tUsed[i]) continue;
+      const dx = targets[i][0] - px, dy = targets[i][1] - py;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bd) { bd = d2; bi = i; }
+    }
+    let x1 = px, y1 = py;
+    if (bi >= 0) { tUsed[bi] = 1; x1 = targets[bi][0]; y1 = targets[bi][1]; }
+    survivors.push({ x0: px, y0: py, x1, y1,
+      c: wonIsMajor ? 0 : 1, d0: 0.66 + rnd() * 0.12, dur: 0.22 });
+  }
+}
+
+const ease = s => s < 0.5 ? 2 * s * s : 1 - (-2 * s + 2) ** 2 / 2;
+
+// ── 배경·경계 레이어 ─────────────────────────────────────────────────
+function tracePoly(geom) {
+  ctx.beginPath();
+  const polys = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates;
+  for (const poly of polys) for (const ring of poly) {
+    ring.forEach(([lon, lat], i) => {
+      const [x, y] = proj(lon, lat);
+      i === 0 ? ctx.moveTo(sx(x), sy(y)) : ctx.lineTo(sx(x), sy(y));
+    });
+    ctx.closePath();
+  }
+}
+function pathSeoul() {
+  ctx.beginPath();
+  for (const f of GU.features) {
+    const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+    for (const poly of polys) {
+      poly[0].forEach(([lon, lat], i) => {
+        const [x, y] = proj(lon, lat);
+        i === 0 ? ctx.moveTo(sx(x), sy(y)) : ctx.lineTo(sx(x), sy(y));
+      });
+      ctx.closePath();
+    }
+  }
+}
+function drawHanFill() {
+  ctx.save();
+  pathSeoul();
+  ctx.clip();
+  for (const f of HAN.features) { tracePoly(f.geometry); ctx.fillStyle = '#f3e6d4'; ctx.fill(); }
+  ctx.restore();
+}
+function drawBoundaries() {
+  // 구 경계 (한강 내부 제외 — 인버스 클리핑), 케이싱
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, cssW, cssH);
+  for (const f of HAN.features) {
+    for (const ring of f.geometry.coordinates) {
+      ring.forEach(([lon, lat], i) => {
+        const [x, y] = proj(lon, lat);
+        i === 0 ? ctx.moveTo(sx(x), sy(y)) : ctx.lineTo(sx(x), sy(y));
+      });
+      ctx.closePath();
+    }
+  }
+  ctx.clip('evenodd');
+  ctx.strokeStyle = '#fef7f0'; ctx.lineWidth = 2.6;
+  for (const f of GU.features) { tracePoly(f.geometry); ctx.stroke(); }
+  ctx.strokeStyle = '#3a3026'; ctx.lineWidth = 1.1;
+  for (const f of GU.features) { tracePoly(f.geometry); ctx.stroke(); }
+  ctx.restore();
+  // 한강 윤곽 케이싱
+  ctx.save();
+  pathSeoul();
+  ctx.clip();
+  for (const f of HAN.features) { tracePoly(f.geometry); }
+  ctx.strokeStyle = '#fef7f0'; ctx.lineWidth = 2.6; ctx.stroke();
+  ctx.strokeStyle = '#3a3026'; ctx.lineWidth = 1.1; ctx.stroke();
+  ctx.restore();
+}
+
+// ── 장면 그리기 (t: 0=분포, 1=득표차) ────────────────────────────────
+const TAU = Math.PI * 2;
+function drawScene(t) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+  drawHanFill();
+
+  const pathW = new Path2D(), pathO = new Path2D();
+  const fading = [];   // 페이드 중인 점만 개별 알파로
+
+  for (const p of pairs) {
+    const s = (t - p.d0) / p.dur;
+    if (s <= 0) {
+      pathW.moveTo(p.ax + R0, p.ay); pathW.arc(p.ax, p.ay, R0, 0, TAU);
+      pathO.moveTo(p.bx + R0, p.by); pathO.arc(p.bx, p.by, R0, 0, TAU);
+    } else if (s < 1) {
+      const e = ease(Math.min(s / 0.8, 1));
+      let ax = p.ax + (p.mx - p.ax) * e, ay = p.ay + (p.my - p.ay) * e;
+      let bx = p.bx + (p.mx - p.bx) * e, by = p.by + (p.my - p.by) * e;
+      if (s > 0.55) {                          // 부딪히며 떨림
+        const sh = Math.sin(s * 55) * 1.3 * (1 - s);
+        ax += p.ux * sh; ay += p.uy * sh;
+        bx -= p.ux * sh; by -= p.uy * sh;
+      }
+      const alpha = s < 0.72 ? 0.95 : 0.95 * (1 - (s - 0.72) / 0.28);
+      const r = R0 * (1 + 0.45 * Math.sin(Math.min(s, 1) * Math.PI));
+      if (alpha >= 0.94) {
+        pathW.moveTo(ax + r, ay); pathW.arc(ax, ay, r, 0, TAU);
+        pathO.moveTo(bx + r, by); pathO.arc(bx, by, r, 0, TAU);
+      } else {
+        fading.push([ax, ay, r, 0, alpha], [bx, by, r, 1, alpha]);
+      }
+    }
+  }
+  for (const v of survivors) {
+    const u = Math.max(0, Math.min(1, (t - v.d0) / v.dur));
+    const e = ease(u);
+    const x = v.x0 + (v.x1 - v.x0) * e, y = v.y0 + (v.y1 - v.y0) * e;
+    const r = R0 + (R1 - R0) * e;
+    if (v.c === 0) { pathW.moveTo(x + r, y); pathW.arc(x, y, r, 0, TAU); }
+    else { pathO.moveTo(x + r, y); pathO.arc(x, y, r, 0, TAU); }
+  }
+
+  ctx.globalAlpha = 0.95;
+  ctx.fillStyle = COLOR_WON; ctx.fill(pathW);
+  ctx.fillStyle = COLOR_OH; ctx.fill(pathO);
+  for (const [x, y, r, c, a] of fading) {
+    ctx.globalAlpha = a;
+    ctx.fillStyle = c === 0 ? COLOR_WON : COLOR_OH;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  drawBoundaries();
+}
+
+// ── 득표율 코로플레스 레이어 ─────────────────────────────────────────
+// 발산 램프 (기사 카토그램과 동일): 오세훈 우세 → 빨강, 정원오 우세 → 파랑
+const RAMP = ['#d8503f', '#f4988a', '#fbeede', '#8ec2ee', '#4a8fd6'];
+const CLAMP_PP = 30;   // ±30%p에서 색 포화
+function hex2rgb(h) { return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); }
+const RAMP_RGB = RAMP.map(hex2rgb);
+function rampColor(u) {           // u: 0(빨강 끝) ~ 1(파랑 끝)
+  const x = Math.max(0, Math.min(1, u)) * (RAMP_RGB.length - 1);
+  const i = Math.min(Math.floor(x), RAMP_RGB.length - 2);
+  const f = x - i;
+  const c = RAMP_RGB[i].map((v, k) => Math.round(v + (RAMP_RGB[i + 1][k] - v) * f));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+const sharePolys = D.dongs.map(d => {
+  const m = (d.oh - d.won) / (d.oh + d.won) * 100;   // 양자 득표율차 %p (+ = 오세훈)
+  const u = (1 - Math.max(-CLAMP_PP, Math.min(CLAMP_PP, m)) / CLAMP_PP) / 2;
+  const path = new Path2D();
+  d.r.forEach(([x, y], i) =>
+    i === 0 ? path.moveTo(sx(x), sy(y)) : path.lineTo(sx(x), sy(y)));
+  path.closePath();
+  return { path, color: rampColor(u) };
+});
+function drawShare(alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  for (const p of sharePolys) {
+    ctx.fillStyle = p.color;
+    ctx.fill(p.path);
+    ctx.strokeStyle = 'rgba(254,247,240,0.7)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke(p.path);
+  }
+  // 강은 코로플레스 위에 다시 깔아 마스킹
+  ctx.save();
+  pathSeoul();
+  ctx.clip();
+  for (const f of HAN.features) { tracePoly(f.geometry); ctx.fillStyle = '#f3e6d4'; ctx.fill(); }
+  ctx.restore();
+  drawBoundaries();
+  ctx.restore();
+}
+
+// ── 토글 + 애니메이션 ────────────────────────────────────────────────
+let t = 0, target = 0, raf = null, lastTs = 0;
+let shareA = 0, shareTarget = 0;
+const SHARE_MS = 500;
+const base = document.createElement('canvas');
+base.width = cv.width; base.height = cv.height;
+const gapText = document.getElementById('gapText');
+
+function snapshotBase() {
+  base.getContext('2d').clearRect(0, 0, base.width, base.height);
+  base.getContext('2d').drawImage(cv, 0, 0);
+}
+function drawFrame() {
+  if (shareA >= 1) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+    drawShare(1);
+  } else {
+    drawScene(t);
+    if (shareA > 0) drawShare(shareA);
+  }
+}
+function settle() {
+  drawFrame();
+  snapshotBase();
+  gapText.textContent = shareA === 1
+    ? '동별 득표율차 · 빨강 = 오세훈 우세, 파랑 = 정원오 우세 (±30%p)'
+    : t === 1
+      ? '상쇄 후 남은 격차만 표시 · 점 1개 = 100표'
+      : '격차 60,259표 (점 602개 차이)';
+}
+function step(ts) {
+  if (!lastTs) lastTs = ts;
+  const dtMs = ts - lastTs;
+  lastTs = ts;
+  if (t !== target) {
+    t += Math.sign(target - t) * dtMs / TOTAL_MS;
+    if (t < 0) t = 0; if (t > 1) t = 1;
+    if (Math.abs(t - target) < 1e-4) t = target;
+  }
+  if (shareA !== shareTarget) {
+    shareA += Math.sign(shareTarget - shareA) * dtMs / SHARE_MS;
+    if (shareA < 0) shareA = 0; if (shareA > 1) shareA = 1;
+    if (Math.abs(shareA - shareTarget) < 1e-3) shareA = shareTarget;
+  }
+  if (t === target && shareA === shareTarget) {
+    raf = null; settle(); return;
+  }
+  drawFrame();
+  raf = requestAnimationFrame(step);
+}
+document.getElementById('seg').addEventListener('click', ev => {
+  const btn = ev.target.closest('button');
+  if (!btn) return;
+  for (const b of document.querySelectorAll('#seg button')) b.classList.toggle('on', b === btn);
+  const mode = btn.dataset.mode;
+  if (mode === 'share') { shareTarget = 1; }            // 점 상태는 유지한 채 페이드인
+  else { shareTarget = 0; target = mode === 'margin' ? 1 : 0; }
+  hideTip();
+  if (!raf) { lastTs = 0; raf = requestAnimationFrame(step); }
+});
+
+// ── 호버: 동 영역 정보 툴팁 + 하이라이트 (애니메이션 중엔 비활성) ──────
+for (const d of D.dongs) {
+  let a = Infinity, b = Infinity, c = -Infinity, e = -Infinity;
+  for (const [x, y] of d.r) {
+    if (x < a) a = x; if (x > c) c = x;
+    if (y < b) b = y; if (y > e) e = y;
+  }
+  d.bbox = [a, b, c, e];
+}
+function inRing(px, py, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi)
+      inside = !inside;
+  }
+  return inside;
+}
+const tip = document.getElementById('tip');
+const fmt = n => n.toLocaleString('ko-KR');
+let cur = null;
+function hideTip() {
+  cur = null;
+  tip.style.display = 'none';
+}
+function redraw(hl) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(base, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (hl) {
+    ctx.beginPath();
+    hl.r.forEach(([x, y], i) =>
+      i === 0 ? ctx.moveTo(sx(x), sy(y)) : ctx.lineTo(sx(x), sy(y)));
+    ctx.closePath();
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+  }
+}
+cv.addEventListener('mousemove', ev => {
+  if (raf) return;                             // 애니메이션 중 비활성
+  const rect = cv.getBoundingClientRect();
+  const ratio = rect.width / cssW;
+  const mx = (ev.clientX - rect.left) / ratio;
+  const my = (ev.clientY - rect.top) / ratio;
+  const px = (mx - PAD) / scale + minX;
+  const py = (cssH - PAD - my) / scale + minY;
+
+  let hit = null;
+  for (const d of D.dongs) {
+    const [a, b, c, e] = d.bbox;
+    if (px < a || px > c || py < b || py > e) continue;
+    if (inRing(px, py, d.r)) { hit = d; break; }
+  }
+  if (hit !== cur) {
+    cur = hit;
+    redraw(hit);
+    if (hit) {
+      const tot = hit.won + hit.oh;
+      const diff = hit.oh - hit.won;
+      const leader = diff > 0 ? '오세훈' : '정원오';
+      const lColor = diff > 0 ? COLOR_OH : COLOR_WON;
+      const pctGap = (Math.abs(diff) / tot * 100).toFixed(1);
+      const mark = c => (c === 'won') === (diff < 0)
+        ? ` <b style="color:${lColor}">+${pctGap}%p</b>` : '';
+      tip.innerHTML =
+        `<div class="tn">${hit.n} <span class="tg">${hit.g}</span></div>` +
+        `<div class="row"><span><span class="sw" style="background:${COLOR_WON}"></span>정원오${mark('won')}</span><b>${fmt(hit.won)} (${(hit.won / tot * 100).toFixed(1)}%)</b></div>` +
+        `<div class="row"><span><span class="sw" style="background:${COLOR_OH}"></span>오세훈${mark('oh')}</span><b>${fmt(hit.oh)} (${(hit.oh / tot * 100).toFixed(1)}%)</b></div>` +
+        `<div class="diff">양자 기준 · 관외 배분 추정</div>`;
+      tip.style.display = 'block';
+    } else {
+      tip.style.display = 'none';
+    }
+  }
+  if (hit) {
+    const wrapRect = document.getElementById('wrap').getBoundingClientRect();
+    let tx = ev.clientX - wrapRect.left + 14;
+    let ty = ev.clientY - wrapRect.top + 14;
+    if (tx + tip.offsetWidth > wrapRect.width - 4) tx -= tip.offsetWidth + 26;
+    tip.style.left = tx + 'px';
+    tip.style.top = ty + 'px';
+  }
+});
+cv.addEventListener('mouseleave', () => {
+  if (raf) return;
+  if (cur) { cur = null; redraw(null); }
+  tip.style.display = 'none';
+});
+
+settle();   // 초기 렌더 (t=0, 분포)
+</script>
+</body>
+</html>
