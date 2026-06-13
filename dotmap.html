@@ -64,6 +64,19 @@
   #tip .diff { margin-top: 3px; padding-top: 3px; border-top: 1px solid #f0e6d8; color: var(--muted); font-size: 11px; }
   #tip .row.minor { font-size: 11px; color: var(--muted); }
   #tip .row.minor b { color: #4a4540; font-weight: 600; }
+  .share-sel {
+    display: none; flex-wrap: wrap; justify-content: center; gap: 6px;
+    margin-top: 12px; max-width: 1000px;
+  }
+  .share-sel.show { display: flex; }
+  .share-sel button {
+    appearance: none; cursor: pointer; font-family: inherit; font-size: 12px;
+    color: var(--ink); background: #fff; border: 1px solid #e6d9c9;
+    border-radius: 16px; padding: 4px 12px; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .share-sel button .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .share-sel button:hover { border-color: #c9b89e; }
+  .share-sel button.on { background: #2a2a2a; color: #fff; border-color: #2a2a2a; }
   .note { font-size: 11px; color: #8a8178; margin-top: 8px; text-align: center; }
   .note a { color: #8a8178; text-decoration: none; border-bottom: 1px solid #d9cbb8; }
   .note a:hover { color: var(--ink); }
@@ -91,6 +104,14 @@
     <div class="item"><span class="dot" style="background:#f2b705"></span>정의당 <b>45,561</b></div>
   </div>
   <div id="wrap"><canvas id="cv"></canvas><div id="tip"></div></div>
+  <div class="share-sel" id="shareSel">
+    <button class="on" data-party="margin">양당 득표율차</button>
+    <button data-party="0"><span class="dot" style="background:#2e6fc9"></span>정원오</button>
+    <button data-party="1"><span class="dot" style="background:#e0301e"></span>오세훈</button>
+    <button data-party="2"><span class="dot" style="background:#f0461a"></span>개혁신당</button>
+    <button data-party="3"><span class="dot" style="background:#9b3fb5"></span>여성의당</button>
+    <button data-party="4"><span class="dot" style="background:#f2b705"></span>정의당</button>
+  </div>
   <div class="note">점 위치는 동 단위 무작위 배치(산림·대형공원 제외: OSM)로, 실제 거주지를 나타내지 않음 · 자료: 중앙선거관리위원회 · <a href="https://x.com/taekie" target="_blank" rel="noopener">無異</a></div>
 
 <script src="data-dotmap.js"></script>
@@ -427,24 +448,56 @@ function rampColor(u) {           // u: 0(빨강 끝) ~ 1(파랑 끝)
   const c = RAMP_RGB[i].map((v, k) => Math.round(v + (RAMP_RGB[i + 1][k] - v) * f));
   return `rgb(${c[0]},${c[1]},${c[2]})`;
 }
-const sharePolys = D.dongs.map(d => {
-  const m = (d.oh - d.won) / (d.oh + d.won) * 100;   // 양자 득표율차 %p (+ = 오세훈)
-  const u = (1 - Math.max(-CLAMP_PP, Math.min(CLAMP_PP, m)) / CLAMP_PP) / 2;
+// 동 폴리곤 path는 한 번만 계산
+const sharePaths = D.dongs.map(d => {
   const path = new Path2D();
   d.r.forEach(([x, y], i) =>
     i === 0 ? path.moveTo(sx(x), sy(y)) : path.lineTo(sx(x), sy(y)));
   path.closePath();
-  return { path, color: rampColor(u) };
+  return path;
 });
+
+// 5개 정당: 이름·색 (정원오·오세훈·개혁·여성·정의)
+const PARTIES = [
+  { name: '정원오', color: COLOR_WON },
+  { name: '오세훈', color: COLOR_OH },
+  { name: '개혁신당', color: COLOR_MINOR[0] },
+  { name: '여성의당', color: COLOR_MINOR[1] },
+  { name: '정의당', color: COLOR_MINOR[2] },
+];
+// 동별 정당 득표율(%) + 정당별 최대값(색 스케일용)
+const v5sum = D.dongs.map(d => (d.v5 || [0,0,0,0,0]).reduce((a, b) => a + b, 0) || 1);
+const partyShare = PARTIES.map((_, pi) =>
+  D.dongs.map((d, i) => (d.v5 ? d.v5[pi] : 0) / v5sum[i] * 100));
+const partyMax = partyShare.map(arr => Math.max(...arr) || 1);
+
+const BASE_RGB = [246, 239, 230];   // 옅은 종이톤(0% 끝)
+function seqColor(pi, u) {           // 정당 색으로 향하는 순차 램프
+  const tt = Math.sqrt(Math.max(0, Math.min(1, u)));   // 저득표 영역 가시성
+  const c = hex2rgb(PARTIES[pi].color);
+  return `rgb(${BASE_RGB.map((b, k) => Math.round(b + (c[k] - b) * tt)).join(',')})`;
+}
+
+// shareMode: 'margin'(양당 득표율차, 기본) 또는 0~4(개별 정당)
+let shareMode = 'margin';
+function dongShareColor(i) {
+  if (shareMode === 'margin') {
+    const d = D.dongs[i];
+    const m = (d.oh - d.won) / (d.oh + d.won) * 100;
+    const u = (1 - Math.max(-CLAMP_PP, Math.min(CLAMP_PP, m)) / CLAMP_PP) / 2;
+    return rampColor(u);
+  }
+  return seqColor(shareMode, partyShare[shareMode][i] / partyMax[shareMode]);
+}
 function drawShare(alpha) {
   ctx.save();
   ctx.globalAlpha = alpha;
-  for (const p of sharePolys) {
-    ctx.fillStyle = p.color;
-    ctx.fill(p.path);
+  for (let i = 0; i < sharePaths.length; i++) {
+    ctx.fillStyle = dongShareColor(i);
+    ctx.fill(sharePaths[i]);
     ctx.strokeStyle = 'rgba(254,247,240,0.7)';
     ctx.lineWidth = 0.5;
-    ctx.stroke(p.path);
+    ctx.stroke(sharePaths[i]);
   }
   // 강은 코로플레스 위에 다시 깔아 마스킹
   ctx.save();
@@ -466,6 +519,16 @@ const gapText = document.getElementById('gapText');
 const legendMinor = document.getElementById('legendMinor');
 const minorOnlyCb = document.getElementById('minorOnly');
 const minorUnit = document.getElementById('minorUnit');
+const shareSel = document.getElementById('shareSel');
+shareSel.addEventListener('click', ev => {
+  const btn = ev.target.closest('button');
+  if (!btn) return;
+  for (const b of shareSel.querySelectorAll('button')) b.classList.toggle('on', b === btn);
+  const p = btn.dataset.party;
+  shareMode = p === 'margin' ? 'margin' : +p;
+  hideTip();
+  if (shareA >= 1 && !raf) { drawFrame(); snapshotBase(); updateGap(); }
+});
 minorOnlyCb.addEventListener('change', () => {
   minorOnly = minorOnlyCb.checked;
   minorUnit.textContent = minorOnly ? '· 한 점 = 10표' : '';
@@ -473,13 +536,20 @@ minorOnlyCb.addEventListener('change', () => {
   if (!raf) { drawFrame(); snapshotBase(); updateGap(); }
 });
 function updateGap() {
-  gapText.textContent = shareA === 1
-    ? '동별 득표율차 · 빨강 = 오세훈 우세, 파랑 = 정원오 우세 (±30%p)'
-    : minorOnly
-      ? '소수정당만 · 한 점 = 10표'
-      : t === 1
-        ? '상쇄 후 남은 격차만 표시 · 한 점 = 100표'
-        : '격차 60,259표 (점 602개 차이)';
+  if (shareA === 1) {
+    if (shareMode === 'margin') {
+      gapText.textContent = '동별 득표율차 · 빨강 = 오세훈 우세, 파랑 = 정원오 우세 (±30%p)';
+    } else {
+      gapText.textContent =
+        `${PARTIES[shareMode].name} 동별 득표율 · 색이 진할수록 높음 (최고 ${partyMax[shareMode].toFixed(1)}%)`;
+    }
+    return;
+  }
+  gapText.textContent = minorOnly
+    ? '소수정당만 · 한 점 = 10표'
+    : t === 1
+      ? '상쇄 후 남은 격차만 표시 · 한 점 = 100표'
+      : '격차 60,259표 (점 602개 차이)';
 }
 
 function snapshotBase() {
@@ -534,6 +604,7 @@ document.getElementById('seg').addEventListener('click', ev => {
   }
   legendMinor.style.opacity = mode === 'dist' ? '1' : '0';
   legendMinor.style.pointerEvents = mode === 'dist' ? 'auto' : 'none';
+  shareSel.classList.toggle('show', mode === 'share');   // 정당 선택은 득표율 모드만
   hideTip();
   if (!raf) { lastTs = 0; raf = requestAnimationFrame(step); }
 });
