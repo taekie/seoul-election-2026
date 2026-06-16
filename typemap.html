@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>서울 행정동 연령·가구 유형 지도</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 32px 24px 64px;
+        font-family:
+          "KoddiUD OnGothic",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #f4efe6;
+        color: #3a3026;
+      }
+      .wrap {
+        max-width: 1060px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 800;
+        margin: 0 0 6px;
+        color: #2a2118;
+      }
+      .sub {
+        color: #7a6f60;
+        font-size: 13.5px;
+        line-height: 1.6;
+        margin: 0 0 22px;
+      }
+      .modesel {
+        display: inline-flex;
+        border: 1px solid #d8cdb8;
+        border-radius: 9px;
+        overflow: hidden;
+        margin: 0 0 16px;
+      }
+      .modesel button {
+        border: none;
+        background: #fbf8f2;
+        color: #7a6f60;
+        font: inherit;
+        font-size: 13px;
+        padding: 7px 15px;
+        cursor: pointer;
+        transition: all 0.12s;
+      }
+      .modesel button + button {
+        border-left: 1px solid #e4dccd;
+      }
+      .modesel button.on {
+        background: #3a3026;
+        color: #fbf8f2;
+        font-weight: 700;
+      }
+      .eleclegend {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        margin: 12px 0 4px;
+        font-size: 12.5px;
+        color: #5a5142;
+      }
+      .eleclegend i {
+        display: inline-block;
+        width: 120px;
+        height: 9px;
+        border-radius: 2px;
+        background: linear-gradient(
+          90deg,
+          #0f5499,
+          #7ba0c8,
+          #f2ece1,
+          #e0907f,
+          #a82810
+        );
+      }
+      .eleclegend .cap {
+        color: #9a8f7c;
+        font-size: 11px;
+      }
+      .legendbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px 20px;
+        margin: 12px 0 4px;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        margin: 0;
+      }
+      .lg {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        cursor: pointer;
+        padding: 6px 11px;
+        border-radius: 9px;
+        border: 1px solid #e4dccd;
+        background: #fbf8f2;
+        transition: all 0.15s;
+      }
+      .lg:hover {
+        border-color: #c9bda6;
+      }
+      .lg.off {
+        opacity: 0.3;
+      }
+      .lg .sw {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        flex: none;
+      }
+      .lg .nm {
+        font-weight: 700;
+        color: #2a2118;
+      }
+      .lg .tag {
+        font-weight: 600;
+        font-size: 11px;
+        color: #8a7f6c;
+        background: #efe7d8;
+        border-radius: 6px;
+        padding: 1px 6px;
+        margin-left: 5px;
+      }
+      .lg .meta {
+        color: #9a8f7c;
+        font-size: 11.5px;
+      }
+      .filter {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+        font-size: 13px;
+        color: #5a5142;
+      }
+      .filter .flabel b {
+        color: #2a2118;
+        font-weight: 700;
+      }
+      .filter .reset {
+        font-size: 11px;
+        color: #9a8f7c;
+        cursor: pointer;
+        text-decoration: underline;
+      }
+      .dual {
+        position: relative;
+        width: 230px;
+        height: 22px;
+      }
+      .dual .track {
+        position: absolute;
+        top: 9px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: #e4dccd;
+        border-radius: 2px;
+      }
+      .dual .fill {
+        position: absolute;
+        top: 9px;
+        height: 4px;
+        background: #9c7a4a;
+        border-radius: 2px;
+      }
+      .dual input[type="range"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 22px;
+        margin: 0;
+        background: none;
+        pointer-events: none;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+      .dual input[type="range"]::-webkit-slider-thumb {
+        pointer-events: auto;
+        -webkit-appearance: none;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid #9c7a4a;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+      .dual input[type="range"]::-moz-range-thumb {
+        pointer-events: auto;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid #9c7a4a;
+        cursor: pointer;
+      }
+      .main {
+        background: transparent;
+        border: none;
+        padding: 0;
+      }
+      .gridhead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 26px 2px 10px;
+      }
+      .gridhead .gh-title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #2a2118;
+      }
+      .gridhead .gh-scale {
+        font-size: 11px;
+        color: #8a7f6c;
+        display: flex;
+        align-items: center;
+      }
+      .gridhead .gh-scale i {
+        display: inline-block;
+        width: 90px;
+        height: 9px;
+        border-radius: 2px;
+        margin: 0 4px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+      }
+      .cell {
+        background: #fbf8f2;
+        border: 1px solid #e9e1d2;
+        border-radius: 12px;
+        padding: 11px 11px 6px;
+      }
+      .cell h3 {
+        margin: 0 0 3px;
+        font-size: 13px;
+        font-weight: 800;
+        color: #2a2118;
+      }
+      .cell .desc {
+        font-size: 11px;
+        color: #8a7f6c;
+        margin: 0 0 7px;
+        line-height: 1.45;
+        min-height: 44px;
+      }
+      .cell .stat {
+        font-size: 10.5px;
+        color: #8a7f6c;
+        margin-bottom: 3px;
+      }
+      .cell .stat b {
+        color: #3a3026;
+      }
+      .tt {
+        position: fixed;
+        pointer-events: none;
+        background: #fffdf8;
+        color: #3a3026;
+        padding: 7px 11px;
+        border-radius: 8px;
+        font-size: 12px;
+        opacity: 0;
+        transition: opacity 0.1s;
+        z-index: 9;
+        max-width: 240px;
+        line-height: 1.35;
+        border: 1px solid #e4dccd;
+        box-shadow: 0 4px 16px rgba(80, 70, 60, 0.18);
+      }
+      .note {
+        margin-top: 26px;
+        font-size: 12px;
+        color: #9a8f7c;
+        line-height: 1.7;
+        border-top: 1px solid #e4dccd;
+        padding-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>서울 행정동 연령·가구 유형 지도</h1>
+      <p class="sub">
+        426개 행정동을 <b>연령(8구간) + 세대원수(1인·4인↑)</b>로 유형화(5종).
+        범례 클릭 시 해당 유형만 강조.
+      </p>
+      <div class="modesel" id="modesel">
+        <button data-mode="type" class="on">동 유형</button>
+        <button data-mode="p25">2025 대선</button>
+        <button data-mode="p26">2026 서울시장</button>
+        <button data-mode="g26">2026 구청장</button>
+        <button data-mode="pr26">2026 비례</button>
+      </div>
+      <div class="main"><svg id="mainmap" viewBox="0 0 980 600"></svg></div>
+      <div class="eleclegend" id="eleclegend">
+        <span id="elecL">정원오</span><i></i><span id="elecR">오세훈</span>
+        <span class="cap">동별 득표율차 · 진하게=우세</span>
+      </div>
+      <div class="legendbar">
+        <div class="legend" id="legend"></div>
+        <div class="filter">
+          <span class="flabel">아파트화 <b id="aptval">0–100%</b></span>
+          <div class="dual">
+            <div class="track"></div>
+            <div class="fill" id="aptfill"></div>
+            <input type="range" id="aptmin" min="0" max="100" value="0" />
+            <input type="range" id="aptmax" min="0" max="100" value="100" />
+          </div>
+        </div>
+      </div>
+      <div class="gridhead">
+        <span class="gh-title">유형별 동 분포</span>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="note" id="note"></div>
+    </div>
+    <div class="tt" id="tt"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-server@3"></script>
+    <script src="data-geo.js"></script>
+    <script src="data-han.js"></script>
+    <script src="data-forest.js"></script>
+    <script src="data-cluster_age.js"></script>
+    <script src="data-dong-detail.js"></script>
+    <script src="data-election-dong.js"></script>
+    <script>
+      const GEO = typeof GEO_DATA !== "undefined" ? GEO_DATA : window.GEO_DATA;
+      const { groups, members } = window.CLUSTERAGE_DATA;
+      const nk = (s) => s.replace(/[제·.\s]/g, "");
+      const g_of = {};
+      groups.forEach((g) => (g_of[g.t] = g));
+      // 메인 통합 지도: figure-ground. 면적 다수(중장년·노년)는 저채도 중립색으로 가라앉히고,
+      // 소수의 의미있는 유형(청년·가족)에만 채도를 줘 강조. 범례·개별지도는 원색 유지.
+      const SOFT = {
+        0: "#d2745a", // 대학가 청년 — 테라코타
+        1: "#e6b15f", // 청년 1인가구 — 골드
+        2: "#5ba585", // 양육 가족 — 그린
+        3: "#a3b6d2", // 중장년 표준 — 소프트 블루(원본색에 근접, 과하지 않게)
+        4: "#b3a487", // 노년층 — 웜 토프
+      };
+      const tt = d3.select("#tt");
+      const typeOf = (f) =>
+        members[f.properties.gu + "|" + nk(f.properties.dong)];
+      const active = new Set(groups.map((g) => g.t));
+      const PAPER = "#f4efe6",
+        INK = "#4f463d",
+        NODATA = "#e3d8c8";
+      // 시장 득표율차(a26 = 정원오%−오세훈%, 음수=오세훈 우세) 발산 스케일
+      const MX = 25;
+      const cMargin = d3
+        .scaleLinear()
+        .domain([-MX, -MX / 2, 0, MX / 2, MX])
+        .range(["#a82810", "#e0907f", "#f2ece1", "#7ba0c8", "#0f5499"])
+        .clamp(true);
+      // 모드: type | p25(2025대선) | p26(2026시장)
+      let mode = "type";
+      const ELEC = window.ELEC_DONG || {};
+      const ELECMETA = {
+        p25: { src: "geo", mkey: "a25", ck: "c25", L: "이재명", R: "김문수",
+          parties: [["이재명", "#0f5499"], ["김문수", "#c4302b"], ["이준석", "#f0461a"]] },
+        p26: { src: "geo", mkey: "a26", ck: "c26", L: "정원오", R: "오세훈",
+          parties: [["정원오", "#0f5499"], ["오세훈", "#c4302b"]] },
+        g26: { src: "elec", mk: "mg", ck: "cg", L: "민주", R: "국힘",
+          parties: [["민주", "#0f5499"], ["국힘", "#c4302b"]] },
+        pr26: { src: "elec", mk: "mpr", ck: "cpr", L: "민주", R: "국힘",
+          parties: [["민주", "#0f5499"], ["국힘", "#c4302b"], ["개혁", "#f0461a"]] },
+      };
+      function marginOf(f) {
+        const M = ELECMETA[mode];
+        return M.src === "geo"
+          ? f.properties[M.mkey]
+          : ELEC[f.properties.gu + "|" + nk(f.properties.dong)]?.[M.mk];
+      }
+
+      // 구 경계 mesh / 서울 외곽 (topojson)
+      function guMesh(geo) {
+        const topo = topojson.topology({ d: geo });
+        return topojson.mesh(
+          topo,
+          topo.objects.d,
+          (a, b) => a === b || a.properties.gu !== b.properties.gu,
+        );
+      }
+      function seoulOutline(geo) {
+        const topo = topojson.topology({ s: geo });
+        return topojson.merge(topo, topo.objects.s.geometries);
+      }
+      function drawHan(svg, path, geo, id) {
+        if (!window.HAN) return;
+        const clip = seoulOutline(geo);
+        const cid = "hanclip-" + id;
+        svg
+          .append("clipPath")
+          .attr("id", cid)
+          .append("path")
+          .attr("d", path(clip));
+        svg
+          .append("g")
+          .attr("clip-path", `url(#${cid})`)
+          .attr("pointer-events", "none")
+          .selectAll("path")
+          .data(HAN.features)
+          .join("path")
+          .attr("d", path)
+          .attr("fill", PAPER)
+          .attr("stroke", INK)
+          .attr("stroke-width", 1.2)
+          .attr("stroke-opacity", 0.65)
+          .attr("stroke-linejoin", "round");
+      }
+      function drawGu(svg, path, geo, w) {
+        svg
+          .append("path")
+          .attr("d", path(guMesh(geo)))
+          .attr("fill", "none")
+          .attr("stroke", INK)
+          .attr("stroke-width", w)
+          .attr("stroke-opacity", 0.65)
+          .attr("stroke-linejoin", "round")
+          .attr("pointer-events", "none");
+      }
+      // 산림=대각선 해칭, 공원=옅은 면 (도트맵 스타일). 서울 외곽으로 clip.
+      function ensureHatch(svg, ts) {
+        const d = svg.append("defs");
+        d.append("pattern")
+          .attr("id", "hatch" + ts)
+          .attr("width", ts)
+          .attr("height", ts)
+          .attr("patternUnits", "userSpaceOnUse")
+          .append("path")
+          .attr("d", `M0,${ts} L${ts},0`)
+          .attr("stroke", "#b2823a")
+          .attr("stroke-width", 0.5)
+          .attr("stroke-opacity", 0.85);
+      }
+      function drawForest(svg, path, id, ts) {
+        if (!window.FOREST) return;
+        ensureHatch(svg, ts);
+        const cid = "fclip-" + id;
+        svg
+          .append("clipPath")
+          .attr("id", cid)
+          .append("path")
+          .attr("d", path(seoulOutline(GEO)));
+        const g = svg
+          .append("g")
+          .attr("clip-path", `url(#${cid})`)
+          .attr("pointer-events", "none");
+        // 좌표 직접 투영(평면 path) — d3.geoPath 구면 winding 회피
+        const polyD = (p) => {
+          let d = "";
+          const ring = (r) => {
+            r.forEach((c, i) => {
+              const q = proj(c);
+              d += (i ? "L" : "M") + q[0].toFixed(1) + " " + q[1].toFixed(1);
+            });
+            d += "Z";
+          };
+          ring(p.o);
+          (p.i || []).forEach(ring);
+          return d;
+        };
+        g.selectAll("path.pk")
+          .data(FOREST.filter((p) => p.k === "park"))
+          .join("path")
+          .attr("d", polyD)
+          .attr("fill-rule", "evenodd")
+          .attr("fill", "#e7ddc8")
+          .attr("fill-opacity", 0.5);
+        g.selectAll("path.fr")
+          .data(FOREST.filter((p) => p.k === "forest"))
+          .join("path")
+          .attr("d", polyD)
+          .attr("fill-rule", "evenodd")
+          .attr("fill", `url(#hatch${ts})`);
+      }
+
+      // ----- 범례 (+ 인라인 연령 피라미드) -----
+      const lg = d3.select("#legend");
+      const ageMax = d3.max(groups, (g) => d3.max(g.agehist));
+      const memMax = d3.max(groups, (g) => d3.max(g.memhist));
+      // 가로축 막대 히스토그램(연령 또는 가구원수). 특징 구간만 색.
+      function histChart(parent, vals, hlset, color, max, labelAt, caption) {
+        const barW = 9,
+          gap = 2.6,
+          padB = 11,
+          padT = 3;
+        const n = vals.length,
+          PW = n * (barW + gap) + 2,
+          PH = 46;
+        const baseY = PH - padB,
+          barMax = PH - padB - padT;
+        const wrap = parent
+          .append("div")
+          .style("display", "flex")
+          .style("align-items", "flex-end")
+          .style("gap", "6px")
+          .style("margin", "2px 0");
+        wrap
+          .append("div")
+          .style("width", "34px")
+          .style("font-size", "9.5px")
+          .style("color", "#9a8f7c")
+          .style("line-height", "1.15")
+          .style("padding-bottom", "9px")
+          .text(caption);
+        const svg = wrap
+          .append("svg")
+          .attr("width", PW)
+          .attr("height", PH)
+          .style("overflow", "visible");
+        svg
+          .append("line")
+          .attr("x1", 0)
+          .attr("x2", PW - 2)
+          .attr("y1", baseY)
+          .attr("y2", baseY)
+          .attr("stroke", "#cdbfa8")
+          .attr("stroke-width", 0.6);
+        vals.forEach((v, i) => {
+          const h = Math.max(0.8, (v / max) * barMax),
+            x = i * (barW + gap);
+          svg
+            .append("rect")
+            .attr("x", x)
+            .attr("y", baseY - h)
+            .attr("width", barW)
+            .attr("height", h)
+            .attr("fill", hlset.includes(i) ? color : "#d2c7b3")
+            .attr("rx", 1);
+        });
+        labelAt.forEach(([i, t]) =>
+          svg
+            .append("text")
+            .attr("x", i * (barW + gap) + barW / 2)
+            .attr("y", PH - 1)
+            .attr("text-anchor", "middle")
+            .attr("font-size", 7)
+            .attr("fill", "#a89b85")
+            .text(t),
+        );
+      }
+      const AGE_LAB = [
+        [2, "20"],
+        [4, "40"],
+        [6, "60"],
+        [8, "80"],
+      ];
+      const MEM_LAB = [
+        [0, "1"],
+        [1, "2"],
+        [2, "3"],
+        [3, "4"],
+        [4, "5+"],
+      ];
+      groups.forEach((g) => {
+        const el = lg
+          .append("div")
+          .attr("class", "lg")
+          .attr("data-t", g.t)
+          .on("click", () => {
+            if (active.size === groups.length) {
+              active.clear();
+              active.add(g.t);
+            } else if (active.has(g.t)) active.delete(g.t);
+            else active.add(g.t);
+            if (!active.size) groups.forEach((x) => active.add(x.t));
+            render();
+          });
+        el.append("div").attr("class", "sw").style("background", g.color);
+        el.append("div")
+          .attr("class", "nm")
+          .text(`${g.t + 1}. ${g.name}`);
+      });
+
+      // ----- 메인 지도 -----
+      const W = 980,
+        H = 600;
+      const sv = d3.select("#mainmap");
+      const proj = d3.geoMercator().fitExtent(
+        [
+          [14, 14],
+          [W - 14, H - 14],
+        ],
+        GEO,
+      );
+      const path = d3.geoPath(proj);
+      const DET = window.DONG_DETAIL || {};
+
+      // 툴팁용 미니 막대 (다크 배경 SVG 문자열)
+      function tipBars(vals, color, hl, labelAt) {
+        const bw = 8.5,
+          gap = 2.4,
+          h = 30,
+          pb = 8,
+          pt = 2,
+          bm = h - pb - pt,
+          max = Math.max(...vals) || 1;
+        const w = vals.length * (bw + gap);
+        let s = `<svg width="${w}" height="${h}" style="display:inline-block;vertical-align:bottom">`;
+        s += `<line x1="0" x2="${w - 2}" y1="${h - pb}" y2="${h - pb}" stroke="#6b6151" stroke-width="0.6"/>`;
+        vals.forEach((v, i) => {
+          const bh = Math.max(0.8, (v / max) * bm);
+          s += `<rect x="${i * (bw + gap)}" y="${h - pb - bh}" width="${bw}" height="${bh}" rx="1" fill="${hl.includes(i) ? color : "#d2c7b3"}"/>`;
+        });
+        (labelAt || []).forEach(
+          ([i, t]) =>
+            (s += `<text x="${i * (bw + gap) + bw / 2}" y="${h - 1}" text-anchor="middle" font-size="7" fill="#a89b85">${t}</text>`),
+        );
+        return s + `</svg>`;
+      }
+      function tipHTML(f) {
+        const t = typeOf(f),
+          g = t != null ? g_of[t] : null;
+        const col = g ? g.color : "#999";
+        let h =
+          `<div style="font-weight:700;margin-bottom:4px">${f.properties.gu} ${f.properties.dong}` +
+          (g ? ` <span style="color:${col}">· ${t + 1}.${g.name}</span>` : "") +
+          `</div>`;
+        const D = DET[f.properties.gu + "|" + nk(f.properties.dong)];
+        if (D) {
+          const cap = (s) =>
+            `<span style="display:inline-block;width:30px;font-size:9px;color:#9a8f7c;vertical-align:bottom;padding-bottom:8px">${s}</span>`;
+          h += `<div style="margin-bottom:1px">${cap("연령")}${tipBars(D.age, col, g ? g.hl : [], AGE_LAB)}</div>`;
+          h += `<div>${cap("가구")}${tipBars(D.mem, col, g ? g.memhl : [], MEM_LAB)}</div>`;
+          if (D.aptr > 0 || (D.apts && D.apts.length))
+            h += `<div style="font-size:11px;margin-top:4px">아파트화 <b>${(D.aptr * 100).toFixed(0)}%</b> · 중대형 <b>${(D.bigr * 100).toFixed(0)}%</b></div>`;
+          (D.apts || [])
+            .filter((a) => a[1] >= 1000)
+            .slice(0, 2)
+            .forEach(
+              (a) =>
+                (h += `<div style="font-size:11px;color:#5a5142">🏢 <b>${a[0]}</b> <span style="color:#9a8f7c">${a[1].toLocaleString()}세대</span></div>`),
+            );
+          if (D.univ)
+            h += `<div style="font-size:11px;color:#5a5142">🎓 <b>${D.univ}</b></div>`;
+          if (D.land || D.green >= 0.12) {
+            const ic = D.land ? (D.land.endsWith("산") ? "⛰️" : "🌳") : "🌳";
+            const nm = D.land ? `<b>${D.land}</b> · ` : "";
+            h += `<div style="font-size:11px;color:#4e7a45">${ic} ${nm}녹지 ${(D.green * 100).toFixed(0)}%</div>`;
+          }
+        }
+        return h;
+      }
+
+      sv.selectAll("path.dong")
+        .data(GEO.features)
+        .join("path")
+        .attr("class", "dong")
+        .attr("d", path)
+        .attr("stroke", PAPER)
+        .attr("stroke-width", 0.4)
+        .on("mouseenter", function (e, f) {
+          d3.select(this)
+            .attr("stroke", "#2a2118")
+            .attr("stroke-width", 1.1)
+            .raise();
+        })
+        .on("mousemove", (e, f) => {
+          tt.style("opacity", 1)
+            .style("left", e.clientX + 14 + "px")
+            .style("top", e.clientY + 12 + "px")
+            .html(tipHTML(f) + allElec(f));
+        })
+        .on("mouseleave", function () {
+          tt.style("opacity", 0);
+          d3.select(this)
+            .attr("stroke", PAPER)
+            .attr("stroke-width", 0.4)
+            .lower();
+        });
+
+      drawForest(sv, path, "main", 4);
+      drawGu(sv, path, GEO, 1.3);
+      drawHan(sv, path, GEO, "main");
+
+      let aptRange = [0, 100]; // 아파트화 필터 범위(%)
+      function aptPass(f) {
+        const d = DET[f.properties.gu + "|" + nk(f.properties.dong)];
+        const a = (d ? d.aptr : 0) * 100;
+        return a >= aptRange[0] && a <= aptRange[1];
+      }
+      const FILTERGREY = "#d9d2c3";
+      function render() {
+        const solo = active.size === 1;
+        sv.selectAll("path.dong")
+          .attr("fill", (f) => {
+            const t = typeOf(f);
+            if (!(active.has(t) && aptPass(f))) return FILTERGREY; // 필터 아웃 = 회색
+            if (mode !== "type") {
+              const m = marginOf(f);
+              return m == null ? NODATA : cMargin(m);
+            }
+            if (t == null) return NODATA;
+            return solo && active.has(t) ? g_of[t].color : SOFT[t];
+          })
+          .attr("fill-opacity", 1);
+        lg.selectAll(".lg").classed("off", function () {
+          return (
+            !active.has(+this.getAttribute("data-t")) &&
+            active.size < groups.length
+          );
+        });
+      }
+      render();
+
+      // ----- 아파트화 양측 범위 슬라이더 -----
+      const amin = document.getElementById("aptmin"),
+        amax = document.getElementById("aptmax"),
+        afill = document.getElementById("aptfill"),
+        aval = document.getElementById("aptval");
+      function updApt(which) {
+        let lo = +amin.value,
+          hi = +amax.value;
+        if (lo > hi) {
+          if (which === "min") {
+            hi = lo;
+            amax.value = hi;
+          } else {
+            lo = hi;
+            amin.value = lo;
+          }
+        }
+        aptRange = [lo, hi];
+        afill.style.left = lo + "%";
+        afill.style.width = hi - lo + "%";
+        aval.textContent = lo + "–" + hi + "%";
+        render();
+      }
+      amin.addEventListener("input", () => updApt("min"));
+      amax.addEventListener("input", () => updApt("max"));
+      updApt("max");
+
+      // ----- 모드 토글 (동유형 / 선거) -----
+      // 모든 선거를 한 줄씩 컴팩트하게 (라벨 + 비례막대 + 득표% + 격차컬러)
+      function elecLine(key, f, M, label) {
+        const sh = ELEC[key] ? ELEC[key][M.ck] : null;
+        const mar = M.src === "geo" ? f.properties[M.mkey] : ELEC[key]?.[M.mk];
+        if (!sh && mar == null) return "";
+        const W = 58;
+        let x = 0,
+          bar = `<svg width="${W}" height="9" style="vertical-align:middle">`;
+        if (sh) {
+          M.parties.forEach((p, i) => {
+            const w = (sh[i] / 100) * W;
+            bar += `<rect x="${x}" y="0" width="${w}" height="9" fill="${p[1]}"/>`;
+            x += w;
+          });
+          const etc = 100 - sh.reduce((a, b) => a + b, 0);
+          if (etc > 0.5)
+            bar += `<rect x="${x}" width="${(etc / 100) * W}" height="9" fill="#d2c7b3"/>`;
+        }
+        bar += `</svg>`;
+        const sht = sh
+          ? M.parties
+              .map((p, i) => `<span style="color:${p[1]}">${sh[i].toFixed(0)}</span>`)
+              .join("·")
+          : "";
+        const mcol = mar == null ? "#999" : mar > 0 ? "#0f5499" : "#a82810";
+        const mtxt =
+          mar == null
+            ? ""
+            : ` <b style="color:${mcol}">(+${Math.abs(mar).toFixed(0)})</b>`;
+        return `<div style="font-size:10.5px;white-space:nowrap;margin-top:1px"><span style="display:inline-block;width:32px;color:#9a8f7c">${label}</span>${bar} ${sht}${mtxt}</div>`;
+      }
+      function allElec(f) {
+        const key = f.properties.gu + "|" + nk(f.properties.dong);
+        return (
+          `<div style="margin-top:5px;padding-top:4px;border-top:1px solid #e4dccd"></div>` +
+          elecLine(key, f, ELECMETA.p25, "대선") +
+          elecLine(key, f, ELECMETA.p26, "시장") +
+          elecLine(key, f, ELECMETA.g26, "구청장") +
+          elecLine(key, f, ELECMETA.pr26, "비례")
+        );
+      }
+      function applyMode() {
+        document
+          .querySelectorAll("#modesel button")
+          .forEach((b) => b.classList.toggle("on", b.dataset.mode === mode));
+        // 유형 버튼·슬라이더는 항상 유지(선거 모드에서도 필터로 비교). 선거 색범례만 토글.
+        const isType = mode === "type";
+        document.getElementById("eleclegend").style.display = isType
+          ? "none"
+          : "flex";
+        if (!isType) {
+          const M = ELECMETA[mode];
+          document.getElementById("elecL").textContent = M.L;
+          document.getElementById("elecR").textContent = M.R;
+        }
+        render();
+      }
+      document.querySelectorAll("#modesel button").forEach((b) =>
+        b.addEventListener("click", () => {
+          mode = b.dataset.mode;
+          applyMode();
+        }),
+      );
+
+      // ----- 5 스몰멀티플 -----
+      const grid = d3.select("#grid");
+      groups.forEach((g) => {
+        const cell = grid.append("div").attr("class", "cell");
+        cell
+          .append("h3")
+          .html(
+            `<span style="color:${g.color}">●</span> ${g.t + 1}. ${g.name}`,
+          );
+        cell.append("div").attr("class", "desc").text(g.desc);
+        histChart(cell, g.agehist, g.hl, g.color, ageMax, AGE_LAB, "연령");
+        histChart(
+          cell,
+          g.memhist,
+          g.memhl,
+          g.color,
+          memMax,
+          MEM_LAB,
+          "가구원수",
+        );
+        cell
+          .append("div")
+          .attr("class", "stat")
+          .html(
+            `평균 <b>${g.meanAge.toFixed(0)}세</b> · 1인 <b>${(g.solo * 100).toFixed(0)}%</b> · 영유아 <b>${(g.r0_9 * 100).toFixed(0)}%</b> · 60+ <b>${(g.r60p * 100).toFixed(0)}%</b>`,
+          );
+        const s = cell
+          .append("svg")
+          .attr("viewBox", "0 0 320 210")
+          .style("width", "100%");
+        const p2 = d3.geoMercator().fitExtent(
+          [
+            [8, 8],
+            [312, 202],
+          ],
+          GEO,
+        );
+        const pa = d3.geoPath(p2);
+        s.selectAll("path.dong")
+          .data(GEO.features)
+          .join("path")
+          .attr("class", "dong")
+          .attr("d", pa)
+          .attr("stroke", PAPER)
+          .attr("stroke-width", 0.2)
+          .attr("fill", (f) => (typeOf(f) === g.t ? g.color : "#e6ddcd"))
+          .attr("fill-opacity", (f) => (typeOf(f) === g.t ? 0.95 : 0.5));
+        drawGu(s, pa, GEO, 0.7);
+        drawHan(s, pa, GEO, "sm" + g.t);
+      });
+
+      document.getElementById("note").innerHTML =
+        "출처: 서울 열린데이터광장 <b>등록인구(연령별/동별) + 세대원수별 세대수, 2026 1분기</b>(주민등록 기준). " +
+        "행정동명으로 선거 지도(행정동 폴리곤)와 1:1 조인. 아파트(공동주택 2001단지)는 좌표로 행정동 배정. " +
+        "피처: 연령 8구간 + 세대원수(1인·4인↑) + 아파트화·신축비율(2015년 이후 준공). 순서는 연령대순.";
+    </script>
+  </body>
+</html>
