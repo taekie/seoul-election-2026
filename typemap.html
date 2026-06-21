@@ -284,7 +284,7 @@
         opacity: 0;
         transition: opacity 0.1s;
         z-index: 9;
-        max-width: 240px;
+        max-width: min(240px, calc(100vw - 16px));
         line-height: 1.35;
         border: 1px solid #e4dccd;
         box-shadow: 0 4px 16px rgba(80, 70, 60, 0.18);
@@ -667,6 +667,23 @@
         return h;
       }
 
+      // 툴팁 위치: 화면 경계를 넘지 않게 클램핑(데스크탑·모바일 공통)
+      function placeTip(cx, cy, f) {
+        tt.style("opacity", 1).html(tipHTML(f) + allElec(f));
+        const node = tt.node();
+        const w = node.offsetWidth,
+          h = node.offsetHeight;
+        const vw = window.innerWidth,
+          vh = window.innerHeight;
+        let left = cx + 14;
+        let top = cy + 12;
+        if (left + w > vw - 8) left = cx - w - 14; // 오른쪽 넘치면 왼쪽으로
+        if (left < 8) left = 8;
+        if (top + h > vh - 8) top = cy - h - 12; // 아래 넘치면 위로(손가락 가림 방지)
+        if (top < 8) top = 8;
+        tt.style("left", left + "px").style("top", top + "px");
+      }
+
       sv.selectAll("path.dong")
         .data(GEO.features)
         .join("path")
@@ -681,10 +698,7 @@
             .raise();
         })
         .on("mousemove", (e, f) => {
-          tt.style("opacity", 1)
-            .style("left", e.clientX + 14 + "px")
-            .style("top", e.clientY + 12 + "px")
-            .html(tipHTML(f) + allElec(f));
+          placeTip(e.clientX, e.clientY, f);
         })
         .on("mouseleave", function () {
           tt.style("opacity", 0);
@@ -692,7 +706,36 @@
             .attr("stroke", PAPER)
             .attr("stroke-width", 0.4)
             .lower();
+        })
+        .on("touchstart", function (e, f) {
+          if (e.touches.length > 1) return; // 핀치 줌은 그대로 둠
+          e.preventDefault();
+          sv.selectAll("path.dong")
+            .attr("stroke", PAPER)
+            .attr("stroke-width", 0.4);
+          d3.select(this)
+            .attr("stroke", "#2a2118")
+            .attr("stroke-width", 1.1)
+            .raise();
+          const tp = e.touches[0];
+          placeTip(tp.clientX, tp.clientY, f);
+        })
+        .on("touchmove", function (e, f) {
+          if (e.touches.length > 1) return;
+          e.preventDefault();
+          const tp = e.touches[0];
+          placeTip(tp.clientX, tp.clientY, f);
         });
+
+      // 지도 밖(다른 곳)을 터치하면 툴팁 닫기
+      document.addEventListener("touchstart", (e) => {
+        if (!e.target.closest("path.dong")) {
+          tt.style("opacity", 0);
+          sv.selectAll("path.dong")
+            .attr("stroke", PAPER)
+            .attr("stroke-width", 0.4);
+        }
+      });
 
       drawForest(sv, path, "main", 4);
       drawGu(sv, path, GEO, 1.3);
